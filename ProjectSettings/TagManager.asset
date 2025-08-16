@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 3
+  tags:
+  - Ground
+  - Platform
+  - Walls
+  - Duck
+  - Exit
+  - Enemy
+  - Sound
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - Ground
+  - Water
+  - UI
+  - Platform
+  - Player
+  - NPC
+  - Wall
+  - Duck
+  - Exit
+  - Enemy
+  - Level
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: 'Background '
+    uniqueID: 2713573563
+    locked: 0
+  - name: Ground, Platforms
+    uniqueID: 1112950693
+    locked: 0
+  - name: Details, Grass, Decor
+    uniqueID: 3979118405
+    locked: 0
+  - name: Lights
+    uniqueID: 3636552629
+    locked: 0
+  - name: Characters
+    uniqueID: 841053275
+    locked: 0
+  m_RenderingLayers:
+  - Default
+  - Layer 1
+  - Layer 2
+  - Layer 3
