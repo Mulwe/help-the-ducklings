@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 
 [DefaultExecutionOrder(-1000)]
@@ -15,8 +16,8 @@ public class EntryPoint : MonoBehaviour
 
     private void Awake()
     {
+        CheckCurrentLoadedScene();
         Application.targetFrameRate = 60;
-
         GetUninitializedObjects();
         Initialize();
     }
@@ -24,7 +25,7 @@ public class EntryPoint : MonoBehaviour
     private void Initialize()
     {
         if (_gameplay != null)
-            _gameplay.Initialize(_tutorialText, _exit);
+            _gameplay.Initialize(_tutorialText, _exit, SceneParameters.isTutorial);
         StartCoroutine(WaitInitSoundMixer(0.8f));
     }
 
@@ -84,6 +85,25 @@ public class EntryPoint : MonoBehaviour
         SoundFXManager.Instance.AudioMixer.SetMusicVolume(0.1f);
         SoundFXManager.Instance.AudioMixer.SetSoundFXVolume(0.5f);
         SoundFXManager.Instance.BackgroundMusic.PlayMusic();
+    }
+
+    private void CheckCurrentLoadedScene()
+    {
+        Debug.Log($"{SceneManager.GetActiveScene().name} is loaded");
+        SceneList sl = Resources.Load<SceneList>("Data/SceneList");
+
+        if (SceneManager.GetActiveScene().name.Equals("Tutorial"))
+        {
+            SceneParameters.isTutorial = true;
+            return;
+        }
+        if (sl != null)
+        {
+            string name = "Tutorial";
+            int index = !sl.IfHasSceneReturnIndex(name, out index) ? 0 : index;
+            Debug.Log($"{sl.GetScene(index)} scene will reload");
+            SceneManager.LoadScene(sl.GetScene(index), LoadSceneMode.Single);
+        }
     }
 }
 

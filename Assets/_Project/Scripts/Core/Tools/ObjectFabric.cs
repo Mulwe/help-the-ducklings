@@ -87,10 +87,13 @@ public class ObjectFabric
 
     public void SetActiveObjectsPool(bool isActive)
     {
-        foreach (GameObject obj in _objPool)
+        if (_objPool != null)
         {
-            if (obj != null)
-                obj.SetActive(isActive);
+            foreach (GameObject obj in _objPool)
+            {
+                if (obj != null)
+                    obj.SetActive(isActive);
+            }
         }
     }
 

@@ -15,8 +15,9 @@ public class SpawnSpotsGizmos : MonoBehaviour
         {
             if (child != null)
             {
-                Gizmos.DrawSphere(child.position, gizmoRadius);
-                UnityEditor.Handles.Label(child.position + Vector3.up * 0.3f, $"{title} {index}");
+
+                Gizmos.DrawWireSphere(child.position, gizmoRadius);
+                UnityEditor.Handles.Label(child.position + Vector3.up * (gizmoRadius + 0.5f), $"{title} {index}");
                 index++;
             }
         }

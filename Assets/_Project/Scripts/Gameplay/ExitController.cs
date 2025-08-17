@@ -55,6 +55,11 @@ public class ExitController : MonoBehaviour
     {
         Score = 0;
         GetPlayerSounds(null);
+        if (this.TryGetComponent<BoxCollider2D>(out var colider))
+        {
+            if (colider.contactCaptureLayers == 0 && playerLayer.value != 0)
+                colider.contactCaptureLayers = playerLayer;
+        }
     }
 
     private void GetPlayerSounds(PlayerAudio playerAudio)

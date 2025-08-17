@@ -24,29 +24,69 @@ public class GameplayManager : MonoBehaviour
     private WaitForSeconds _waitForHalfSecond = new WaitForSeconds(0.5f);
     private WaitForSeconds _waitForTwoSeconds = new WaitForSeconds(2f);
 
-    public void Initialize(TextMeshProUGUI t, ExitController exit)
+    private bool _isTutorial = false;
+    public void Initialize(TextMeshProUGUI t, ExitController exit, bool activateTutorial)
     {
         _text = t.GetComponent<TextMeshProUGUI>();
         _exit = exit;
+        _isTutorial = activateTutorial;
 
         UpdateAmount();
         SetGoal(_amount);
+        //shows first message
+        SetGreetingText();
         _popupText = StartCoroutine(ShowMessage(3f, true));
         _winCondition = StartCoroutine(Win());
-        //Debug.Log("Init gameplay");
+
     }
 
 
     private void OnEnable()
     {
-        ExitController.OnDucksCollected += HandleCollected;
+        if (_isTutorial)
+            ExitController.OnDucksCollected += HandleCollectedOnTutorial;
+        else
+            ExitController.OnDucksCollected += HandleCollected;
+    }
+
+    private void OnDisable()
+    {
+        if (_isTutorial)
+            ExitController.OnDucksCollected -= HandleCollectedOnTutorial;
+        else
+            ExitController.OnDucksCollected -= HandleCollected;
+    }
+
+
+    private void SetGreetingText()
+    {
+        if (_isTutorial)
+        {
+            UpdatePopUpText($"Deliver the ducks to the exit: (0/{_amount})");
+        }
+        else
+        {
+            UpdatePopUpText($"Deliver the ducks to the exit:\n(0/{_amount})");
+        }
     }
 
     private void HandleCollected(int collectedCount)
     {
         if (_exit != null)
         {
-            _event ??= StartCoroutine(UpdateTextUI());
+            _event ??= StartCoroutine(UpdateTextUI
+                        ($"Almost there!\nYou saved {_exit.Score} <color=yellow>ducklings</color>\n.",
+                        $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
+        }
+    }
+
+    private void HandleCollectedOnTutorial(int collectedCount)
+    {
+        if (_exit != null)
+        {
+            _event ??= StartCoroutine(UpdateTextUI
+                        ($"Nice job!\n.",
+                        $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
         }
     }
 
@@ -59,19 +99,17 @@ public class GameplayManager : MonoBehaviour
         }
     }
 
-    private IEnumerator UpdateTextUI()
+    private IEnumerator UpdateTextUI(string msg, string msg2)
     {
         if (!_showMessage)
         {
-            string msg = $"Almost there!\nYou saved {_exit.Score} <color=yellow>ducklings</color>\n.";
             ShowPopUpText(msg, 2f);
             yield return _waitForTwoSeconds;
             yield return _waitForHalfSecond;
 
             if (_goal - _exit.Score > 0)
             {
-                msg = $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>";
-                ShowPopUpText(msg, 2f);
+                ShowPopUpText(msg2, 2f);
                 yield return _waitForTwoSeconds;
                 yield return _waitForHalfSecond;
             }
@@ -113,6 +151,8 @@ public class GameplayManager : MonoBehaviour
         _duration = duration;
     }
 
+
+
     private IEnumerator ShowMessage(float delay, bool showMessage)
     {
         _duration = delay;
@@ -142,7 +182,7 @@ public class GameplayManager : MonoBehaviour
 
     IEnumerator Win()
     {
-
+        yield return _waitForTwoSeconds;
         yield return WaitForCondition(() => GameManager.Instance != null,
             () =>
             {
@@ -152,37 +192,29 @@ public class GameplayManager : MonoBehaviour
         // Debug.Log("Start Win");
         while (true)
         {
+
             if (_exit != null)
             {
                 _levelFinished = _exit.Score == _amount || _exit.Score >= _goal;
             }
-            if (_levelFinished)
+            if (_levelFinished && _isTutorial)
+            {
+                string msg = $"Good job!\n You're score is <color=yellow>{_exit.Score}</color>";
+                ShowPopUpText(msg, 3f);
+                //load next scene
+            }
+
+            if (_levelFinished && !_isTutorial)
             {
                 string msg = $"You're won!\n You're score is {_exit.Score}\n Thanks for playing";
                 ShowPopUpText(msg, 3f);
                 break;
             }
 
-
             yield return (_waitForSecond);
         }
         yield return new WaitForSeconds(2f);
         UnityEngine.Application.Quit();
     }
-
-
-
-    private IEnumerator ShowAndHideTextMesh(string msg, float duration)
-    {
-        if (_text != null)
-        {
-            _text.text = msg;
-            _text.enabled = true;
-            yield return new WaitForSeconds(duration);
-            _text.enabled = false;
-        }
-        _popupText = null;
-    }
-
 
 }
