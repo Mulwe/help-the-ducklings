@@ -19,12 +19,15 @@ public class GameplayManager : MonoBehaviour
     private Coroutine _popupText = null;
     private float _duration = 1f;
     private bool _showMessage = false;
+    private bool _isTutorial = false;
 
     private WaitForSeconds _waitForSecond = new WaitForSeconds(1f);
     private WaitForSeconds _waitForHalfSecond = new WaitForSeconds(0.5f);
     private WaitForSeconds _waitForTwoSeconds = new WaitForSeconds(2f);
 
-    private bool _isTutorial = false;
+    public static Action TutorialFinished;
+
+
     public void Initialize(TextMeshProUGUI t, ExitController exit, bool activateTutorial)
     {
         _text = t.GetComponent<TextMeshProUGUI>();
@@ -39,6 +42,7 @@ public class GameplayManager : MonoBehaviour
         _winCondition = StartCoroutine(Win());
 
     }
+
 
 
     private void OnEnable()
@@ -201,16 +205,19 @@ public class GameplayManager : MonoBehaviour
             {
                 string msg = $"Good job!\n You're score is <color=yellow>{_exit.Score}</color>";
                 ShowPopUpText(msg, 3f);
-                //load next scene
-            }
 
+                Debug.Log("Load next level.Transition");
+                // delay before loading level
+                yield return _waitForTwoSeconds;
+                TutorialFinished?.Invoke();
+                yield break;
+            }
             if (_levelFinished && !_isTutorial)
             {
                 string msg = $"You're won!\n You're score is {_exit.Score}\n Thanks for playing";
                 ShowPopUpText(msg, 3f);
                 break;
             }
-
             yield return (_waitForSecond);
         }
         yield return new WaitForSeconds(2f);

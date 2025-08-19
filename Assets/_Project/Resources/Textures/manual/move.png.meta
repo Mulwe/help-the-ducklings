@@ -1,25 +1,10 @@
 fileFormatVersion: 2
-guid: e5f8ddf6863ce03479be93359eb55eae
+guid: 2d7ee2a4f2457264cbfbac2485e0f44c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1921337063021962082
-    second: tutorial_0
-  - first:
-      213: -8098022396540033732
-    second: tutorial_1
-  - first:
-      213: 1650465131718364636
-    second: tutorial_2
-  - first:
-      213: 2954596387962759104
-    second: tutorial_3
-  - first:
-      213: 7195781894802841362
-    second: tutorial_4
-  - first:
-      213: -5542560828392017848
-    second: tutorial_5
+      213: -3527056022417232336
+    second: move_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -63,10 +48,10 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 0
+  spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 8
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -167,133 +152,133 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: tutorial_0
+      name: move_0
       rect:
         serializedVersion: 2
-        x: 5
-        y: 21
-        width: 18
-        height: 18
+        x: 0
+        y: 0
+        width: 59
+        height: 45
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e9c98c0fe1a0655e0800000000000000
-      internalID: -1921337063021962082
+      spriteID: 03e2be81c316d0fc0800000000000000
+      internalID: -3527056022417232336
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: tutorial_1
+      name: move_1
       rect:
         serializedVersion: 2
-        x: 26
-        y: 21
-        width: 18
-        height: 18
+        x: 59
+        y: 0
+        width: 59
+        height: 45
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: c35e217198b0e9f80800000000000000
-      internalID: -8098022396540033732
+      spriteID: e8cb93aaa73822049be7592b27d7ad37
+      internalID: 1719604179
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: tutorial_2
+      name: move_2
       rect:
         serializedVersion: 2
-        x: 45
-        y: 24
-        width: 15
-        height: 13
+        x: 118
+        y: 0
+        width: 59
+        height: 45
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: cddcd32fa41a7e610800000000000000
-      internalID: 1650465131718364636
+      spriteID: b959a14f6fa373d40bfca6141e1b36d4
+      internalID: -915050496
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: tutorial_3
+      name: move_3
       rect:
         serializedVersion: 2
-        x: 61
-        y: 23
-        width: 15
-        height: 14
+        x: 177
+        y: 0
+        width: 59
+        height: 45
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 0c72c2fb2c5d00920800000000000000
-      internalID: 2954596387962759104
+      spriteID: 99d4d9c2931036c4bb7944ed730777d2
+      internalID: -914818244
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: tutorial_4
+      name: move_4
       rect:
         serializedVersion: 2
-        x: 5
-        y: 1
-        width: 18
-        height: 18
+        x: 236
+        y: 0
+        width: 59
+        height: 45
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 21f19e8228d8cd360800000000000000
-      internalID: 7195781894802841362
+      spriteID: 77fd4564df009d74fbfc1fe8ab8236f6
+      internalID: 848514679
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: tutorial_5
+      name: move_5
       rect:
         serializedVersion: 2
-        x: 26
-        y: 1
-        width: 47
-        height: 18
+        x: 295
+        y: 0
+        width: 59
+        height: 45
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 840f2b5da4ed413b0800000000000000
-      internalID: -5542560828392017848
+      spriteID: e5b94ae26a8a3e747abfcfcf9f5f2637
+      internalID: 1811254498
       vertices: []
       indices: 
       edges: []
@@ -302,7 +287,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 1917b325d1d0b0748bca15d63f1b239c
+    spriteID: 97022708d9c696d44939cead812974de
     internalID: 0
     vertices: []
     indices: 
@@ -312,12 +297,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      tutorial_0: -1921337063021962082
-      tutorial_1: -8098022396540033732
-      tutorial_2: 1650465131718364636
-      tutorial_3: 2954596387962759104
-      tutorial_4: 7195781894802841362
-      tutorial_5: -5542560828392017848
+      move_0: -3527056022417232336
+      move_1: 1719604179
+      move_2: -915050496
+      move_3: -914818244
+      move_4: 848514679
+      move_5: 1811254498
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
