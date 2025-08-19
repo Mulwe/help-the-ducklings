@@ -14,9 +14,13 @@ public class EntryPoint : MonoBehaviour
     [SerializeField] private SpawnManager _spawnManager;
     [SerializeField] private SoundMixerManager _soundMixerManager;
 
+    private SceneList _sceneList = null;
+    private static string _tutorialName = "Tutorial";
+    private static string _level_1 = "Gameplay";
+
     private void Awake()
     {
-        CheckCurrentLoadedScene();
+        InitAndCheckLoadedScene();
         Application.targetFrameRate = 60;
         GetUninitializedObjects();
         Initialize();
@@ -87,23 +91,70 @@ public class EntryPoint : MonoBehaviour
         SoundFXManager.Instance.BackgroundMusic.PlayMusic();
     }
 
-    private void CheckCurrentLoadedScene()
+    private void InitAndCheckLoadedScene()
     {
         Debug.Log($"{SceneManager.GetActiveScene().name} is loaded");
         SceneList sl = Resources.Load<SceneList>("Data/SceneList");
+        _sceneList = sl;
 
-        if (SceneManager.GetActiveScene().name.Equals("Tutorial"))
+        if (SceneParameters.level == null)
         {
+            Debug.Log($"<color=red>Yep</color>");
+            SceneParameters.level = _tutorialName;
             SceneParameters.isTutorial = true;
-            return;
         }
-        if (sl != null)
+        //reload if not tutorial
+        if (!SceneManager.GetActiveScene().name.Equals("Tutorial") && sl != null && SceneParameters.isTutorial)
         {
-            string name = "Tutorial";
-            int index = !sl.IfHasSceneReturnIndex(name, out index) ? 0 : index;
-            Debug.Log($"{sl.GetScene(index)} scene will reload");
-            SceneManager.LoadScene(sl.GetScene(index), LoadSceneMode.Single);
+            LoadScene(_tutorialName, sl);
         }
     }
+
+
+
+    private void OnEnable()
+    {
+        GameplayManager.TutorialFinished += OnTutorialFinished;
+    }
+
+    private void OnDisable()
+    {
+        GameplayManager.TutorialFinished -= OnTutorialFinished;
+    }
+
+    private void OnTutorialFinished()
+    {
+        SceneParameters.isTutorial = false;
+        SceneParameters.level = _level_1;
+        //save score
+
+        LoadScene(_level_1, _sceneList);
+    }
+
+    private void OnLevelFinished()
+    {
+        // next / end Game
+        //level
+        //extra params
+
+        //save score
+        LoadScene(_level_1, _sceneList);
+    }
+
+    private void LoadScene(string sceneName, SceneList list)
+    {
+        int i = 0;
+        if (list != null && list.IfHasSceneReturnIndex(sceneName, out int index) && index >= 0)
+        {
+            i = index;
+            SceneManager.LoadScene(list.GetScene(index), LoadSceneMode.Single);
+        }
+        else
+        {
+            bool result = list.IfHasSceneReturnIndex(sceneName, out int index2);
+            Debug.LogError($"Scene '{sceneName}' not found. Index:{index2}");
+        }
+    }
+
 }
 
