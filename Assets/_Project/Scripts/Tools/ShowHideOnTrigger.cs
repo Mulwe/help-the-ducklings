@@ -11,6 +11,7 @@ public class ShowHideOnTrigger : MonoBehaviour
     private bool _startAnimation = false;
     private bool _fadeIn = false;
     private bool _fadeOut = false;
+
     private bool _playerIsNear = false;
 
     private Color baseColor;
@@ -106,15 +107,24 @@ public class ShowHideOnTrigger : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D collision)
     {
+
         if (collision != null && collision.CompareTag("Player"))
         {
             _playerIsNear = true;
+
+        if (collision != null && collision.CompareTag("Player") && _spriteRender != null)
+        {
+
             if (_delayAction != null)
             {
                 StopCoroutine(_delayAction);
                 _delayAction = null;
             }
+
             if (!_startAnimation && GetCurrentColorAlpha() < 1f && GetCurrentColorAlpha() != -1f)
+
+            if (!_startAnimation && GetCurrentColorAlpha() < 1f)
+
             {
                 ToogleOnFadeIn();
             }
@@ -127,7 +137,10 @@ public class ShowHideOnTrigger : MonoBehaviour
         {
             if (!_startAnimation && _delayAction == null)
             {
+
                 _playerIsNear = false;
+
+
                 _delayAction = StartCoroutine(DelayStartAction(() => ToogleOnFadeOut(), null, 1f));
             }
         }
