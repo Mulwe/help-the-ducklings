@@ -5,6 +5,9 @@ public class ShowHideOnTrigger : MonoBehaviour
 {
     [SerializeField] private BoxCollider2D _boxCollider2D;
     [SerializeField] private SpriteRenderer _spriteRender;
+
+    [Tooltip("Fade in/out anumation duaration:")]
+    [SerializeField] private float _fadeDuration = 1f;
     private WaitForFixedUpdate _WaitForFixedUpdate = new();
     private WaitForSeconds _wait200m = new(0.2f);
 
@@ -61,11 +64,11 @@ public class ShowHideOnTrigger : MonoBehaviour
         _boxCollider2D ??= GetComponent<BoxCollider2D>();
         SpriteIsActive(false);
         InterruptAnimation(true);
-        _animation = StartCoroutine(FadeAnimation(1f));
+        _animation = StartCoroutine(FadeAnimation(_fadeDuration));
         SpriteIsActive(true);
     }
 
-    void SpriteIsActive(bool isActive)
+    private void SpriteIsActive(bool isActive)
     {
         if (_spriteRender != null)
             _spriteRender.enabled = isActive;
@@ -92,11 +95,13 @@ public class ShowHideOnTrigger : MonoBehaviour
                 new Color(baseColor.r, baseColor.g, baseColor.b, 1f);
                 _startAnimation = false;
             }
+            if (_playerIsNear && !IsInvoking(nameof(ResetToHidden)))
+            {
+                Invoke(nameof(ResetToHidden), 2f);
+            }
             yield return _WaitForFixedUpdate;
         }
     }
-
-
 
     private float GetCurrentColorAlpha()
     {
@@ -111,22 +116,16 @@ public class ShowHideOnTrigger : MonoBehaviour
         if (collision != null && collision.CompareTag("Player"))
         {
             _playerIsNear = true;
-
-        if (collision != null && collision.CompareTag("Player") && _spriteRender != null)
-        {
-
-            if (_delayAction != null)
+            CancelInvoke(nameof(ResetToHidden));
+            if (collision != null && collision.CompareTag("Player") && _spriteRender != null)
             {
-                StopCoroutine(_delayAction);
-                _delayAction = null;
-            }
-
-            if (!_startAnimation && GetCurrentColorAlpha() < 1f && GetCurrentColorAlpha() != -1f)
-
-            if (!_startAnimation && GetCurrentColorAlpha() < 1f)
-
-            {
-                ToogleOnFadeIn();
+                if (_delayAction != null)
+                {
+                    StopCoroutine(_delayAction);
+                    _delayAction = null;
+                }
+                if (!_startAnimation && GetCurrentColorAlpha() < 1f)
+                    ToogleOnFadeIn();
             }
         }
     }
@@ -137,22 +136,12 @@ public class ShowHideOnTrigger : MonoBehaviour
         {
             if (!_startAnimation && _delayAction == null)
             {
-
                 _playerIsNear = false;
-
-
+                CancelInvoke(nameof(ResetToHidden));
                 _delayAction = StartCoroutine(DelayStartAction(() => ToogleOnFadeOut(), null, 1f));
             }
         }
     }
-
-    private IEnumerator DelayStartAction(System.Action action)
-    {
-        yield return _wait200m;
-        action?.Invoke();
-        _delayAction = null;
-    }
-
     private IEnumerator DelayStartAction(System.Action first, System.Action second, float delay)
     {
         first?.Invoke();
@@ -160,4 +149,29 @@ public class ShowHideOnTrigger : MonoBehaviour
         second?.Invoke();
         _delayAction = null;
     }
+
+    private void ResetToHidden()
+    {
+        if (_delayAction == null)
+        {
+            _playerIsNear = false;
+            _delayAction = StartCoroutine(DelayStartAction(() => ToogleOnFadeOut(), null, 0f));
+        }
+    }
+
+    private void OnDisable()
+    {
+        StopAllCoroutines();
+        _animation = null;
+        _delayAction = null;
+    }
 }
+
+/**
+private IEnumerator DelayStartAction(System.Action action)
+{
+    yield return _wait200m;
+    action?.Invoke();
+    _delayAction = null;
+}
+**/

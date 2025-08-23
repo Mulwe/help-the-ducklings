@@ -99,7 +99,7 @@ public class EntryPoint : MonoBehaviour
 
         if (SceneParameters.level == null)
         {
-            Debug.Log($"<color=red>Yep</color>");
+            // Debug.Log($"<color=red>First run </color>. Init tutorial");
             SceneParameters.level = _tutorialName;
             SceneParameters.isTutorial = true;
         }

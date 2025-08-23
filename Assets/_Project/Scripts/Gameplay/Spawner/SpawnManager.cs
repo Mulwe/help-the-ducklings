@@ -14,11 +14,13 @@ public class SpawnManager : MonoBehaviour
 
     public void Initialize()
     {
+        /*
         foreach (SpawnController controller in _list)
         {
             if (controller != null)
                 Debug.Log($"{controller.GetName()} initilized");
         }
+        */
     }
 
     private void Awake()

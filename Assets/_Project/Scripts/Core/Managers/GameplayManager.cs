@@ -205,7 +205,6 @@ public class GameplayManager : MonoBehaviour
             {
                 string msg = $"Good job!\n You're score is <color=yellow>{_exit.Score}</color>";
                 ShowPopUpText(msg, 3f);
-
                 Debug.Log("Load next level.Transition");
                 // delay before loading level
                 yield return _waitForTwoSeconds;
