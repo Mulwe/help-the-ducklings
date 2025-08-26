@@ -56,7 +56,6 @@ public class PlayerController : MonoBehaviour
     private PlayerAudio _playerAudio;
 
 
-    //звук срабатывает несколько раз
     public void OnJump(InputAction.CallbackContext context)
     {
         if (_rb == null) return;
@@ -71,7 +70,6 @@ public class PlayerController : MonoBehaviour
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, _rb.linearVelocity.y * 0.5f);
             _jumpsRemaining--;
         }
-
 
         //Wall jumping
         if (context.performed && wallJumpTimer > 0f)
@@ -121,6 +119,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+        _ = isWallSliding;
         _jumpsRemaining = maxJumps;
         _groundLayer = LayerMask.GetMask("Ground");
         _rb = GetComponent<Rigidbody2D>();
@@ -190,7 +189,6 @@ public class PlayerController : MonoBehaviour
             isWallJumping = false;
             wallJumpDirection = -transform.localScale.x;
             wallJumpTimer = wallJumpTime;
-
 
             // Если нужно отменить уже запланированный вызов раньше
             CancelInvoke(nameof(CancelWallJump));

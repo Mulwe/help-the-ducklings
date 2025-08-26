@@ -12,8 +12,9 @@ public class GameplayManager : MonoBehaviour
     private int _amount = 0;
     private bool _levelFinished = false;
 
-    private Coroutine _event = null;
-    private Coroutine _winCondition = null;
+    private Coroutine _cEvent = null;
+    private Coroutine _winCoroutine = null;
+    private Coroutine _initCoroutine = null;
 
     [Tooltip("Popup text settings")]
     private Coroutine _popupText = null;
@@ -34,16 +35,27 @@ public class GameplayManager : MonoBehaviour
         _exit = exit;
         _isTutorial = activateTutorial;
 
-        UpdateAmount();
-        SetGoal(_amount);
-        //shows first message
-        SetGreetingText();
-        _popupText = StartCoroutine(ShowMessage(3f, true));
-        _winCondition = StartCoroutine(Win());
-
+        _initCoroutine ??= StartCoroutine(InitializeGoal());
     }
 
 
+    private IEnumerator InitializeGoal()
+    {
+        while (_amount == 0)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.GetDucks() != null)
+            {
+                _amount = GameManager.Instance.GetDucks().Count;
+                SetGoal(_amount);
+                SetGreetingText();
+                _popupText = StartCoroutine(ShowMessage(3f, true));
+                _winCoroutine = StartCoroutine(Win());
+                _initCoroutine = null;
+                yield break;
+            }
+            yield return null;
+        }
+    }
 
     private void OnEnable()
     {
@@ -59,6 +71,10 @@ public class GameplayManager : MonoBehaviour
             ExitController.OnDucksCollected -= HandleCollectedOnTutorial;
         else
             ExitController.OnDucksCollected -= HandleCollected;
+        StopAllCoroutines();
+        _initCoroutine = null;
+        _cEvent = null;
+        _winCoroutine = null;
     }
 
 
@@ -70,7 +86,7 @@ public class GameplayManager : MonoBehaviour
         }
         else
         {
-            UpdatePopUpText($"Deliver the ducks to the exit:\n(0/{_amount})");
+            UpdatePopUpText($"Ducks left:\n(0/{_amount})");
         }
     }
 
@@ -78,7 +94,7 @@ public class GameplayManager : MonoBehaviour
     {
         if (_exit != null)
         {
-            _event ??= StartCoroutine(UpdateTextUI
+            _cEvent ??= StartCoroutine(UpdateTextUI
                         ($"Almost there!\nYou saved {_exit.Score} <color=yellow>ducklings</color>\n.",
                         $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
         }
@@ -88,7 +104,7 @@ public class GameplayManager : MonoBehaviour
     {
         if (_exit != null)
         {
-            _event ??= StartCoroutine(UpdateTextUI
+            _cEvent ??= StartCoroutine(UpdateTextUI
                         ($"Nice job!\n.",
                         $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
         }
@@ -118,7 +134,7 @@ public class GameplayManager : MonoBehaviour
                 yield return _waitForHalfSecond;
             }
         }
-        _event = null;
+        _cEvent = null;
     }
 
 

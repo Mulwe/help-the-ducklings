@@ -12,45 +12,26 @@ public class ShowHideOnTrigger : MonoBehaviour
     private WaitForSeconds _wait200m = new(0.2f);
 
     private bool _startAnimation = false;
-    private bool _fadeIn = false;
     private bool _fadeOut = false;
-
     private bool _playerIsNear = false;
 
-    private Color baseColor;
+
+    private Color _baseColor;
     private Coroutine _delayAction = null;
     private Coroutine _animation = null;
 
-    public void InterruptAnimation(bool hide)
-    {
-        if (_spriteRender != null)
-        {
-            if ((hide && _fadeIn) || (!hide && _fadeIn))
-            {
-                _spriteRender.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f);
-            }
-            else if (hide && _fadeOut || !hide && _fadeOut)
-            {
-                _spriteRender.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
-            }
-            else
-                _spriteRender.color = baseColor;
-        }
-        _startAnimation = false;
-        _fadeIn = false;
-        _fadeOut = false;
-    }
+    public bool IsFadedOut => _fadeOut;
+    public bool IsAnimationStarted => _startAnimation;
 
     public void ToogleOnFadeIn()
     {
         _startAnimation = true;
-        _fadeIn = true;
         _fadeOut = false;
     }
+
     public void ToogleOnFadeOut()
     {
         _startAnimation = true;
-        _fadeIn = false;
         _fadeOut = true;
     }
 
@@ -59,11 +40,19 @@ public class ShowHideOnTrigger : MonoBehaviour
         _spriteRender ??= GetComponent<SpriteRenderer>();
         if (_spriteRender != null)
         {
-            baseColor = _spriteRender.color;
+            _baseColor = _spriteRender.color;
         }
         _boxCollider2D ??= GetComponent<BoxCollider2D>();
         SpriteIsActive(false);
-        InterruptAnimation(true);
+    }
+
+    private void OnEnable()
+    {
+        if (_animation != null)
+        {
+            StopCoroutine(_animation);
+            _animation = null;
+        }
         _animation = StartCoroutine(FadeAnimation(_fadeDuration));
         SpriteIsActive(true);
     }
@@ -138,7 +127,8 @@ public class ShowHideOnTrigger : MonoBehaviour
             {
                 _playerIsNear = false;
                 CancelInvoke(nameof(ResetToHidden));
-                _delayAction = StartCoroutine(DelayStartAction(() => ToogleOnFadeOut(), null, 1f));
+                if (gameObject.activeInHierarchy)
+                    _delayAction = StartCoroutine(DelayStartAction(() => ToogleOnFadeOut(), null, 1f));
             }
         }
     }
@@ -152,7 +142,7 @@ public class ShowHideOnTrigger : MonoBehaviour
 
     private void ResetToHidden()
     {
-        if (_delayAction == null)
+        if (_delayAction == null && gameObject.activeInHierarchy)
         {
             _playerIsNear = false;
             _delayAction = StartCoroutine(DelayStartAction(() => ToogleOnFadeOut(), null, 0f));
@@ -161,10 +151,20 @@ public class ShowHideOnTrigger : MonoBehaviour
 
     private void OnDisable()
     {
-        StopAllCoroutines();
-        _animation = null;
-        _delayAction = null;
+        CancelInvoke(nameof(ResetToHidden));
+        if (_animation != null)
+        {
+            StopCoroutine(_animation);
+            _animation = null;
+        }
+
+        if (_delayAction != null)
+        {
+            StopCoroutine(_delayAction);
+            _delayAction = null;
+        }
     }
+
 }
 
 /**
