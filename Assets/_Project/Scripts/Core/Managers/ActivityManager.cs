@@ -1,21 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine; // Component
-
+using UnityEngine;
 
 //Checks activity behind camera, off if ready to dbe deactivated
 public class ActivityManager
 {
     private List<Component> _ducks;
     private List<Component> _enemies;
-
-    private Camera _camera;
-    private float _checkInterval = 0.2f;
-    private float _cullingDistance = 0f;
-
-    private float _viewportOffset = 0.3f;
-    private float _distanceOffset = 20f;
 
     // Поля для 2D
     private Rect _cameraViewRect;
@@ -24,13 +16,18 @@ public class ActivityManager
     private MonoBehaviour _coroutineRunner;
     private Coroutine _visibilityCheckCoroutine;
 
-    private Dictionary<GameObject, bool> _originalActiveStates = new Dictionary<GameObject, bool>();
+    private Camera _camera;
+    private float _checkInterval = 0.2f;
+    private float _cullingDistance = 0f;
+    private float _viewportOffset = 0.3f;
+    private float _distanceOffset = 20f;
 
+    private Dictionary<GameObject, bool> _originalActiveStates = new Dictionary<GameObject, bool>();
+    private WaitForSeconds _waitTime;
 
     public ActivityManager(MonoBehaviour runner)
     {
         _coroutineRunner = runner;
-
     }
 
     public ActivityManager(MonoBehaviour runner,
@@ -46,18 +43,24 @@ public class ActivityManager
         this._distanceOffset = _distanceOffset;
     }
 
-    public void SetCheckInterval(float intervalInSec) => this._checkInterval = intervalInSec;
-    public void SetCullingDistance(float cullingDistance) => this._cullingDistance = cullingDistance;
-    public void SetViewportOffset(float viewportOffset) => this._viewportOffset = viewportOffset;
-    public void SetDistanceOffset(float distanceOffset) => this._distanceOffset = distanceOffset;
+    public void SetCheckInterval(float intervalInSec)
+    {
+        this._checkInterval = intervalInSec;
+        _waitTime = new WaitForSeconds(intervalInSec);
+    }
 
+    public void SetCullingDistance(float cullingDistance) => this._cullingDistance = cullingDistance;
+
+    public void SetViewportOffset(float viewportOffset) => this._viewportOffset = viewportOffset;
+
+    public void SetDistanceOffset(float distanceOffset) => this._distanceOffset = distanceOffset;
 
     public void StartMonitoring()
     {
         if (_camera != null && _checkInterval > 0)
         {
             StopMonitoring();
-            _visibilityCheckCoroutine = _coroutineRunner.StartCoroutine(VisibilityCheckRoutine(_checkInterval));
+            _visibilityCheckCoroutine = _coroutineRunner.StartCoroutine(VisibilityCheckRoutine());
         }
         else
             Debug.Log($"{nameof(StartMonitoring)}: camera or checkInterval incorrect");
@@ -71,14 +74,13 @@ public class ActivityManager
             _visibilityCheckCoroutine = null;
         }
     }
+
     public void SetTargetCamera(Camera cam)
     {
         this._camera = cam;
     }
 
     //--------------------------------------------------------------------------------------------------------------------
-
-
     private void UpdateCameraRects()
     {
         if (_camera == null) return;
@@ -122,17 +124,13 @@ public class ActivityManager
         return _extendedViewRect.Contains(new Vector2(objPos.x, objPos.y));
     }
 
-    private IEnumerator VisibilityCheckRoutine(float interval)
+    private IEnumerator VisibilityCheckRoutine()
     {
         while (true)
         {
-            yield return new WaitForSeconds(interval);
-
-            if (_camera != null)
-            {
-                UpdateCameraRects();
-                CheckAndUpdateVisibility();
-            }
+            UpdateCameraRects();
+            CheckAndUpdateVisibility();
+            yield return _waitTime;
         }
     }
 
@@ -151,25 +149,26 @@ public class ActivityManager
             if (comp == null) continue;
 
             GameObject obj = comp.gameObject;
+            //save info in about object in dictionary
             if (!_originalActiveStates.ContainsKey(obj))
                 _originalActiveStates[obj] = obj.activeSelf;
-
             bool shouldBeActive = IsObject2DVisible(obj);
+
             if (obj.activeSelf != shouldBeActive)
             {
                 if (IsObjectReadyToBeDeactivated(obj))
                 {
-                    // Debug.Log($"{obj.name} is {(!shouldBeActive ? "<color=red>behind</color>" : "<color=green>on</color>")} camera");
                     obj.SetActive(shouldBeActive);
                 }
             }
         }
     }
+
     private bool IsObjectReadyToBeDeactivated(GameObject obj)
     {
         if (obj.TryGetComponent<DuckController>(out var duck))
         {
-            if (!duck.IsFollowing && duck.IsAirborne) return true;
+            if (!duck.IsFollowing && duck.IsAirborne && !duck.IsLocked) return true;
         }
 
         if (obj.TryGetComponent<EnemyController>(out var enemy))
@@ -211,12 +210,14 @@ public class ActivityManager
     {
         return _ducks?.OfType<T>().ToList() ?? new List<T>();
     }
+
     public List<T> GetEnemies<T>() where T : Component
     {
         return _enemies?.OfType<T>().ToList() ?? new List<T>();
     }
 
     public List<Component> GetAllDucks() => _ducks ?? new List<Component>();
+
     public List<Component> GetAllEnemies() => _enemies ?? new List<Component>();
 
     public List<Component> AddEnemies<T>(T[] components) where T : Component
@@ -227,6 +228,7 @@ public class ActivityManager
         }
         return _enemies;
     }
+
     public List<Component> AddDucks<T>(T[] components) where T : Component
     {
         foreach (T component in components)
@@ -284,6 +286,7 @@ public class ActivityManager
     {
         ChangeComponentsActivity(components, ref _ducks, isActive);
     }
+
     public void ChangeEnemyActivity<T>(T component, bool isActive) where T : Component
     {
         ChangeComponentActivity(component, ref _enemies, isActive);
@@ -318,6 +321,7 @@ public class ActivityManager
     {
         _ducks?.Clear();
     }
+
     public void CleanEnemies()
     {
         _enemies?.Clear();
@@ -336,36 +340,3 @@ public class ActivityManager
         _enemies = null;
     }
 }
-/* Optional, not used
-
-// pixel perfect
-private Vector2 SnapToPixel(Vector2 position)
-{
-    float pixelsPerUnit = 100f;
-
-    return new Vector2(
-        Mathf.Round(position.x * pixelsPerUnit) / pixelsPerUnit,
-        Mathf.Round(position.y * pixelsPerUnit) / pixelsPerUnit
-    );
-}
-
-private Rect GetObject2DBounds(GameObject obj)
-{
-    if (obj.TryGetComponent<SpriteRenderer>(out var sr))
-        return BoundsToRect(sr.bounds);
-
-    if (obj.TryGetComponent<Collider2D>(out var col))
-        return BoundsToRect(col.bounds);
-
-    // default rect  
-    Vector3 pos = obj.transform.position;
-    return new Rect(pos.x - 0.5f, pos.y - 0.5f, 1f, 1f);
-}
-
-private Rect BoundsToRect(Bounds bounds)
-{
-    Vector2 center = bounds.center;
-    Vector2 size = bounds.size;
-    return new Rect(center.x - size.x / 2f, center.y - size.y / 2f, size.x, size.y);
-}
-*/

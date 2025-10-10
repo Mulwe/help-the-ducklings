@@ -1,27 +1,27 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
     private Rigidbody2D _rb;
-    bool isFacingRight = true; // false если по default повернут в влево
+    private bool isFacingRight = true; // false если по default повернут в влево
 
     [Header("Moving")]
     [SerializeField] private float _speed = 8.0f;
     private Vector2 _direction = Vector2.zero;
-    private bool _canControl = true;
+    private bool _playerControlEnabled = true;
 
     [Header("Jumping")]
     public float JumpPower = 10f;
     public int maxJumps = 2;
     private int _jumpsRemaining;
 
-    [SerializeField] private LayerMask exitLayer;
-
-    [Header("GroundCheck")]
+    [Header("Trigger layers:")]
     [SerializeField] private LayerMask _groundLayer;
+
     public Transform groundPos;
     public Vector2 groundSize = new Vector2(0.5f, 0.05f);
     private bool _isGrounded;
@@ -34,27 +34,23 @@ public class PlayerController : MonoBehaviour
 
     [Header("WallCheck")]
     [SerializeField] private LayerMask _wallCheckLayer;
+
     public Transform wallCheckPos;
     public Vector2 _wallCheckSize = new Vector2(0.5f, 0.05f);
 
     [Header("WallSlide")]
     public float wallSlideSpeed = 2f;
     private bool isWallSliding;
-
-
     private bool isWallJumping;
     private float wallJumpDirection;
     private float wallJumpTime = 0.5f;
     private float wallJumpTimer;
     public Vector2 wallJumpPower = new Vector2(5f, 10f);
 
-    public static event Action CancelCameraLookDown;
-    public static event Action CameraLookDown;
+    public static event Action CancelCameraLookDown, CameraLookDown;
 
-    Coroutine _playerControlsCamera = null;
-
+    private Coroutine _playerControlsCamera = null;
     private PlayerAudio _playerAudio;
-
 
     public void OnJump(InputAction.CallbackContext context)
     {
@@ -89,54 +85,63 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public float GetPlayerSpeed()
+    {
+        return _speed;
+    }
 
-    public float GetPlayerSpeed() { return _speed; }
-    public bool FacingRight() { return isFacingRight; }
+    public bool FacingRight()
+    {
+        return isFacingRight;
+    }
+
     public void OnMoving(InputAction.CallbackContext context)
     {
         Vector2 input = context.ReadValue<Vector2>();
         _direction.x = input.x;
+
         if (input.y < 0f && input.x == 0f)
-        {
-            if (_playerControlsCamera == null)
-                _playerControlsCamera = StartCoroutine(ResetCountDown(3f, CameraLookDown, CancelCameraLookDown));
-        }
+            _playerControlsCamera ??= StartCoroutine(ResetCountDown(3f, CameraLookDown, CancelCameraLookDown));
     }
 
     private IEnumerator ResetCountDown(float delay, System.Action setTrue, System.Action setFalse)
     {
         float timer = delay;
         setTrue?.Invoke();
+
         while (timer > 0f)
         {
             timer -= Time.deltaTime;
             yield return null;
         }
+
         setFalse?.Invoke();
         _playerControlsCamera = null;
     }
 
     private void Awake()
     {
-        InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
         _ = isWallSliding;
         _jumpsRemaining = maxJumps;
         _groundLayer = LayerMask.GetMask("Ground");
         _rb = GetComponent<Rigidbody2D>();
+
         if (_rb != null)
             DefaultGravity();
-        _canControl = true;
+
+        _playerControlEnabled = true;
         _playerAudio = this.GetComponent<PlayerAudio>();
     }
 
     private void Update()
     {
-        if (_rb != null && _canControl)
+        if (_playerControlEnabled)
         {
             IsOnGround();
             Gravity();
             ProcessWallSlide();
             ProcessWallJump();
+
             if (!isWallJumping)
             {
                 ApplyMovement();
@@ -155,8 +160,9 @@ public class PlayerController : MonoBehaviour
         if (_rb.linearVelocity.y < 0)
         {
             _rb.gravityScale = _originalGravityScale * FallMultiplier;
-            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x,
-                    Mathf.Max(_rb.linearVelocity.y, -MaxFallSpeed));
+            _rb.linearVelocity = new Vector2(
+                                        _rb.linearVelocity.x,
+                                        Mathf.Max(_rb.linearVelocity.y, -MaxFallSpeed));
         }
         else
         {
@@ -219,21 +225,22 @@ public class PlayerController : MonoBehaviour
     private void Flip()
     {
         if (isFacingRight && _direction.x < 0 || !isFacingRight && _direction.x > 0)
-        {
             MakeFlip();
-        }
     }
 
     private void MakeFlip()
     {
         isFacingRight = !isFacingRight;
+
         Vector3 ls = transform.localScale;
         ls.x *= -1f;
         transform.localScale = ls;
     }
 
-    private void DefaultGravity() { if (_rb != null) _rb.gravityScale = _originalGravityScale; }
-
+    private void DefaultGravity()
+    {
+        _rb.gravityScale = _originalGravityScale;
+    }
 
     public void GetKickDamage(float forceStrength, Vector2 dir)
     {
@@ -242,19 +249,18 @@ public class PlayerController : MonoBehaviour
         if (dir.x < 0)
             direction = -direction;
 
-        if (_canControl)
+        if (_playerControlEnabled)
             StartCoroutine(DisableControlsTemporarily(0.3f));
         _rb.AddForce(dir * forceStrength, ForceMode2D.Impulse);
         _playerAudio.PlayDamageSounds(transform, 1.0f);
     }
+
     private IEnumerator DisableControlsTemporarily(float duration)
     {
-        _canControl = false;
+        _playerControlEnabled = false;
         yield return new WaitForSeconds(duration);
-        _canControl = true;
+        _playerControlEnabled = true;
     }
-
-
 
     private void OnDrawGizmos()
     {

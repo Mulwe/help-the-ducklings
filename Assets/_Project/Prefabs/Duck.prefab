@@ -140,6 +140,7 @@ MonoBehaviour:
   duckLayer:
     serializedVersion: 2
     m_Bits: 1024
+  experimentalChaining: 0
 --- !u!114 &5128485520848657487
 MonoBehaviour:
   m_ObjectHideFlags: 0

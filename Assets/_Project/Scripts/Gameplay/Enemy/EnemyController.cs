@@ -9,13 +9,14 @@ public class EnemyController : MonoBehaviour
     private Rigidbody2D _rb;
     private SpriteRenderer _sr;
     private Collider2D _col;
+
     [Header("Kick Settings")]
     [Tooltip("KickPower: how hard the kick will push the player")]
     [SerializeField] private float _kickPower = 30f;
+
     [Tooltip("Minimum force for jump.")]
     [SerializeField] private float _jumpForce = 20f;
     private float _defaultGravity;
-
 
     [Header("Vision distance:")]
     public float visionDistance = 10f;
@@ -63,9 +64,7 @@ public class EnemyController : MonoBehaviour
     private readonly WaitForFixedUpdate _waitForFixedUpdate = new();
     private readonly WaitForSeconds _wait5Sec = new(5f);
 
-
-    bool IsLogging = false;
-
+    private bool IsLogging = false;
 
     private void Awake()
     {
@@ -80,7 +79,6 @@ public class EnemyController : MonoBehaviour
             _rb.simulated = true;
             _defaultGravity = _rb.gravityScale;
             _defaultMoveForce = _moveForce;
-            _mainCoroutine = StartCoroutine(StartPatrol());
         }
         else
             Debug.LogError($"{this}: not init");
@@ -97,6 +95,7 @@ public class EnemyController : MonoBehaviour
         StopAllCoroutines();
         _mainCoroutine = null;
     }
+
     private void InitLayerMasks()
     {
         _ownMask.value = 1 << this.gameObject.layer;
@@ -115,6 +114,7 @@ public class EnemyController : MonoBehaviour
         if (groundPos == null)
             groundPos = transform.Find("GroundCheck");
     }
+
     private void InitSettings()
     {
         _isPatrolling = false;
@@ -128,7 +128,7 @@ public class EnemyController : MonoBehaviour
     {
         Coroutine viewZone = StartCoroutine(VisionCheckLoop());
         Coroutine groundCheck = StartCoroutine(GroundChecker());
-
+        Coroutine soundInteraction = StartCoroutine(SoundInteraction());
 
         if (_audioRoutine == null)
         {
@@ -207,30 +207,35 @@ public class EnemyController : MonoBehaviour
         _canMove = false;
     }
 
-
-    IEnumerator VisionCheckLoop()
+    private IEnumerator VisionCheckLoop()
     {
-
-        float time = 0f;
-        float delay = 1.5f;
         while (true)
         {
-            time += Time.deltaTime;
             CheckLineOfSight();
 
             if (_isPlayerInView || _alertTimerActive)
                 SwitchToAggressive();
             else
                 SwitchToPassive();
+            yield return _waitShort;
+        }
+    }
 
+    private IEnumerator SoundInteraction()
+    {
+        float time = 0f;
+        float delay = 1.5f;
+        while (true)
+        {
+            time += 0.2f;
             if (time > delay)
             {
-                if (_isPlayerInView || _alertTimerActive)
+                if (_isPlayerInView || _alertTimerActive && !_startJumping)
                     _enemyAudio.PlayDamageSounds(transform, 1.0f);
                 else
                     _enemyAudio.PlayInteractionSounds(transform, 1.0f);
                 time = 0f;
-                delay = UnityEngine.Random.Range(1.5f, 3.5f);
+                delay = UnityEngine.Random.Range(1f, 2f);
             }
             yield return _waitShort;
         }
@@ -250,8 +255,7 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-
-    IEnumerator GroundChecker()
+    private IEnumerator GroundChecker()
     {
         while (true)
         {
@@ -284,8 +288,6 @@ public class EnemyController : MonoBehaviour
             _canMove = true;
         }
     }
-
-
 
     //check is player on line & if there the obstackles
     private bool CheckLineOfSight()
@@ -331,8 +333,6 @@ public class EnemyController : MonoBehaviour
         return meetPlayer;
     }
 
-
-
     private void PlayerAhead(RaycastHit2D hit, bool obstaclesInFront)
     {
         UpdateSpriteFlipTowardsPlayer();
@@ -356,7 +356,6 @@ public class EnemyController : MonoBehaviour
             _alertTimerActive = true;
         }
     }
-
 
     private IEnumerator DisableMovementForSeconds(float delay)
     {
@@ -437,10 +436,8 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-
     private Vector2 CalcDirection(Rigidbody2D rb)
     {
-
         Vector2 rayDirection = _sr.flipX ? Vector2.left : Vector2.right;
         RaycastHit2D obstacleHit = Physics2D.Raycast(transform.position, rayDirection,
                                                    _jumpStartDistance, _wallLayer | _groundLayer);
@@ -479,7 +476,6 @@ public class EnemyController : MonoBehaviour
 
         return new Vector2(horizontalDirection, verticalComponent).normalized;
     }
-
 
     private void MoveRbToPosition(Vector2 targetPos, Vector2 currentPos)
     {
@@ -580,19 +576,17 @@ public class EnemyController : MonoBehaviour
             Vector2 direction = targetPos - currentPos;
             float sqrDistance = direction.sqrMagnitude;
 
-
             UpdateSpriteFlip(direction);
-
 
             if (IsFalling(currentPos, fallThresholdY))
             {
-                //break if falling  
+                //break if falling
                 yield break;
             }
 
             if (sqrDistance <= 0.05f)
             {
-                //break if reached the distance  
+                //break if reached the distance
                 _rb.MovePosition(targetPos);
                 break;
             }
@@ -601,7 +595,7 @@ public class EnemyController : MonoBehaviour
             _rb.MovePosition(newPos);
 
             // игрок может загнать врага в стену и оптимизированный sqrDistance не даст выйти из цикла
-            // так как событие sqrDistance <= 0.05f никогда не наступит. Проверяем кадры  
+            // так как событие sqrDistance <= 0.05f никогда не наступит. Проверяем кадры
             //stuck detection - more than 20 frames on the same spot - stucked
             if (Vector2.SqrMagnitude(_rb.position - lastPosition) < 0.001f)
             {
@@ -657,7 +651,7 @@ public class EnemyController : MonoBehaviour
         {
             _rb.linearVelocity = new Vector2(0f, _rb.linearVelocity.y);
             _rb.angularVelocity = 0f;
-            Debug.Log("Duck Collision");
+            // Debug.Log("Duck Collision");
             DuckController duck = collision.gameObject.GetComponent<DuckController>();
             if (duck != null && duck.IsFollowing)
             {
@@ -683,7 +677,6 @@ public class EnemyController : MonoBehaviour
             SwitchToAggressive();
         }
     }
-
 
     private void GetPlayerReference(Collision2D collision)
     {
@@ -718,7 +711,6 @@ public class EnemyController : MonoBehaviour
             }
 
             //Debug.Log($"<color=green>isGrounded: </color>{_isGrounded}");
-
         }
     }
 }

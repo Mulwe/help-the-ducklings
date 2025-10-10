@@ -5,17 +5,21 @@ public class SpawnController : MonoBehaviour
 {
     [Tooltip("Prefab to spawn:")]
     [SerializeField] private GameObject _prefab;
+
     [Tooltip("Position to spawn:")]
     [SerializeField] private Transform[] _spots;
+
     [Tooltip("Amount:")]
     [SerializeField] private int _amount;
+
     private ObjectFabric _objFabric;
     private string _name;
 
-
     public List<GameObject> GetSpawnedObjects()
     {
-        return _objFabric.GetObjectsPool();
+        if (_objFabric != null)
+            return _objFabric.GetObjectsPool();
+        return null;
     }
 
     public string GetName()
@@ -31,6 +35,41 @@ public class SpawnController : MonoBehaviour
             return null;
     }
 
+    public GameObject GetSpawnedPrefab()
+    {
+        if (_prefab != null)
+            return _prefab;
+        else
+            return null;
+    }
+
+    public bool IsThisObjectFromPool(GameObject obj)
+    {
+        if (_objFabric != null)
+        {
+            List<GameObject> list = _objFabric.GetObjectsPool();
+            if (list != null && list.Count > 0 && list.Contains(obj))
+            {
+                return true;
+            }
+        }
+        else
+            Debug.LogWarning($"{this.name}: _objFabric not init");
+        return false;
+    }
+
+    private void IsOutOfBounds(GameObject spawnedObject)
+    {
+        if (spawnedObject != null && spawnedObject.gameObject != null && spawnedObject.gameObject.activeInHierarchy)
+        {
+            if (IsThisObjectFromPool(spawnedObject.gameObject))
+            {
+                // return back to scene
+                // or update all game conditions
+            }
+        }
+    }
+
     private void Initialized()
     {
         _objFabric?.SetActiveObjectsPool(true);
@@ -42,6 +81,10 @@ public class SpawnController : MonoBehaviour
         {
             Debug.LogError($"{this}: Add more spots for spawn. Spots:[{_spots.Length}], Amount: [{_amount}]");
         }
+    }
+
+    private void OnEnable()
+    {
     }
 
     private void Awake()
@@ -60,7 +103,6 @@ public class SpawnController : MonoBehaviour
         }
     }
 
-
     private void CleanSpots()
     {
         for (int i = 0; i < _spots.Length; i++)
@@ -71,6 +113,10 @@ public class SpawnController : MonoBehaviour
                 _spots[i] = null;
             }
         }
+    }
+
+    private void OnDisable()
+    {
     }
 
     private void OnDestroy()

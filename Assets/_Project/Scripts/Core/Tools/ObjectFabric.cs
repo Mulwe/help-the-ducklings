@@ -85,6 +85,8 @@ public class ObjectFabric
         return _objPool;
     }
 
+
+
     public void SetActiveObjectsPool(bool isActive)
     {
         if (_objPool != null)

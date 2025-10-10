@@ -11,6 +11,7 @@ TagManager:
   - Exit
   - Enemy
   - Sound
+  - PopUp message
   layers:
   - Default
   - TransparentFX

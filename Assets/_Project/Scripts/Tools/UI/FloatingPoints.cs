@@ -44,11 +44,11 @@ public class FloatingPoints : MonoBehaviour
 
     private void UpdateText(int points)
     {
-        points *= points < 100 ? 100 : 1;
         if (_popupText != null)
         {
             _popupText.text = $"+{points}";
         }
+
     }
 
     private void OnDuckCollected(int points)

@@ -5,23 +5,29 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-
-[DefaultExecutionOrder(-500)]
+[DefaultExecutionOrder(-900)]
 public class EntryPointScene : MonoBehaviour
 {
     // tutorial
     [SerializeField] private TextMeshProUGUI _tutorialText;
+
     [SerializeField] private ExitController _exit;
     [SerializeField] private GameplayManager _gameplay;
     [SerializeField] private SpawnManager _spawnManager;
     [SerializeField] private SoundMixerManager _soundMixerManager;
+    [SerializeField] private PlayerController _player;
 
+    private Coroutine _coPlayerInit;
 
     private void Awake()
     {
-        Application.targetFrameRate = 60;
         GetUninitializedObjects();
-        Initialize();
+        if (_player == null)
+            MissedPlayerReference();
+        else
+        {
+            Initialize();
+        }
     }
 
     private void OnEnable()
@@ -29,25 +35,60 @@ public class EntryPointScene : MonoBehaviour
         GameplayManager.TutorialFinished += OnTutorialFinished;
     }
 
+    private void MissedPlayerReference()
+    {
+        _coPlayerInit = StartCoroutine(WaitFor(
+               () => _player != null,
+               () => _player = UnityEngine.Object.FindFirstObjectByType<PlayerController>(),
+               () =>
+               {
+                   Initialize();
+                   _coPlayerInit = null;
+               },
+               10
+           ));
+    }
 
     private void Initialize()
     {
-        if (_gameplay != null)
-            _gameplay.Initialize(_tutorialText, _exit, SceneParameters.isTutorial);
-        StartCoroutine(WaitInitSoundMixer(0.8f));
+        if (_gameplay != null && _spawnManager != null)
+        {
+            _gameplay.Initialize(_player, _tutorialText, _exit, _spawnManager, SceneParameters.isTutorial);
+            StartCoroutine(WaitInitSoundMixer(0.8f));
+        }
+        else
+            Debug.LogWarning("Failed initialization");
     }
-
 
     private void GetUninitializedObjects()
     {
         if (_gameplay == null || _spawnManager == null)
         {
             GameObject obj = GameObject.Find("Level");
-            _gameplay ??= obj.GetComponent<GameplayManager>();
             _spawnManager ??= obj.GetComponent<SpawnManager>();
+            _gameplay ??= obj.GetComponent<GameplayManager>();
         }
         if (_tutorialText == null)
             FindTutorial();
+
+        if (_player == null)
+        {
+            TryGetComponent<PlayerController>(out PlayerController plController);
+            _player = plController;
+        }
+    }
+
+    private IEnumerator WaitFor(Func<bool> condition, System.Action cycleAction, System.Action afterAction, int attemps)
+    {
+        int t = attemps <= 0 ? 1 : attemps;
+        WaitForSeconds wait = new WaitForSeconds(0.1f);
+        while (condition() != true && t > 0)
+        {
+            cycleAction?.Invoke();
+            yield return wait;
+            t--;
+        }
+        afterAction?.Invoke();
     }
 
     private void FindTutorial()
@@ -84,18 +125,11 @@ public class EntryPointScene : MonoBehaviour
         }
         yield return WaitSoundMixer(mainVolume);
         yield return null;
-        SetGameVolume();
-    }
-
-    private void SetGameVolume()
-    {
         SoundFXManager.Instance.SetVolume(0.8f);
         SoundFXManager.Instance.AudioMixer.SetMusicVolume(0.1f);
         SoundFXManager.Instance.AudioMixer.SetSoundFXVolume(0.5f);
         SoundFXManager.Instance.BackgroundMusic.PlayMusic();
     }
-
-
 
     private void OnTutorialFinished()
     {
@@ -140,13 +174,12 @@ public class EntryPointScene : MonoBehaviour
                 await Task.Delay(500);
             }
         }
-
     }
 
     private void OnDisable()
     {
         GameplayManager.TutorialFinished -= OnTutorialFinished;
+        StopAllCoroutines();
+        _coPlayerInit = null;
     }
-
 }
-

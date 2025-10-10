@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -6,11 +7,15 @@ public class SceneLoader : MonoBehaviour
 {
     public static SceneLoader Instance;
     [SerializeField] private GameObject _loadingScreen;
+    [SerializeField] private Camera _loadingCamera;
 
     public static string LevelTutorial = "Tutorial";
     public static string Level_1 = "Gameplay";
 
 
+
+    public static Action OnSceneUnloaded;
+    public static Action OnSceneLoaded;
 
     private void Awake()
     {
@@ -26,42 +31,42 @@ public class SceneLoader : MonoBehaviour
         }
     }
 
-
     public void SetLoadingScreen(GameObject loadingScreen)
     {
         _loadingScreen = loadingScreen;
-
     }
 
     public void Initialize()
     {
-
         InitializeSceneParameters();
     }
 
 
-    public async Task LoadSceneAsync(string nameScene)
+    public async Task LoadSceneAsync(string sceneName)
     {
+
         if (_loadingScreen != null)
         {
             _loadingScreen.SetActive(true);
             _loadingScreen.GetComponentInParent<Canvas>().enabled = true;
         }
 
-        var task = LoadScene(nameScene);
+        var task = LoadScene(sceneName);
 
         await task;
 
+        await Task.Delay(10);
+
         if (_loadingScreen != null)
             _loadingScreen.SetActive(false);
+
     }
 
     private static async Task LoadScene(string sceneName)
     {
+        OnSceneUnloaded?.Invoke();
         var asyncOperation = SceneManager.LoadSceneAsync(sceneName);
         asyncOperation.allowSceneActivation = false;
-
-
 
         while (asyncOperation.progress < 0.9f)
         {
@@ -69,12 +74,10 @@ public class SceneLoader : MonoBehaviour
         }
 
         await Task.Delay(500); // half second
+
         asyncOperation.allowSceneActivation = true;
+        OnSceneLoaded?.Invoke();
     }
-
-
-
-
 
 
     private void InitializeSceneParameters()
@@ -86,7 +89,8 @@ public class SceneLoader : MonoBehaviour
         }
     }
 
-    public bool LoadTutorial()
+    //first run
+    public bool LoadTutorialFirstRun()
     {
         if (!SceneManager.GetActiveScene().name.Equals(LevelTutorial) && SceneParameters.isTutorial)
         {
@@ -107,6 +111,7 @@ public class SceneLoader : MonoBehaviour
         }
         return false;
     }
+
 
 
     private void ResetSceneParameters()

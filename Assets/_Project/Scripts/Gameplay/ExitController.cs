@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-
 public class ExitController : MonoBehaviour
 {
     [SerializeField] private PlayerController _player;
@@ -28,7 +27,7 @@ public class ExitController : MonoBehaviour
         int count = 0;
         int atmps = 0;
 
-        if (_pl.lastfollowChild != null)
+        if (_pl.lastFollowChild != null)
         {
             while (atmps < 100)
             {
@@ -74,12 +73,10 @@ public class ExitController : MonoBehaviour
         }
     }
 
-
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player") || other.CompareTag("Duck"))
+        if (other.CompareTag("Player") /* || other.CompareTag("Duck")*/)
         {
-
             DetachLastOne();
         }
     }
@@ -105,14 +102,11 @@ public class ExitController : MonoBehaviour
         _soundRepeatPlay = null;
     }
 
-
     private IEnumerator RepeatAction(System.Action action, float delay)
     {
         action?.Invoke();
         yield return new WaitForSeconds(delay);
     }
-
-
 
     //update UI update points
 
@@ -120,9 +114,8 @@ public class ExitController : MonoBehaviour
     {
         if (queueAmount > 0)
         {
-            OnDucksCollected?.Invoke(queueAmount);
+            OnDucksCollected?.Invoke(queueAmount * 100);
         }
         yield return null;
     }
-
 }

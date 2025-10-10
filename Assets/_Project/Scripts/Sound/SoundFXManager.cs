@@ -4,6 +4,7 @@ using UnityEngine;
 public class SoundFXManager : MonoBehaviour
 {
     public static SoundFXManager Instance;
+
     [Header("Sound FX - GameObject to spawn:")]
     [SerializeField] private AudioSource _soundFXObject;
     [SerializeField] private SoundMusicManager _background;
@@ -21,9 +22,13 @@ public class SoundFXManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            _overrided = false;
+            _volume = 1.0f;
         }
-        _overrided = false;
-        _volume = 1.0f;
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     public void PlaySoundFXClip(AudioClip audioClip, Transform spawn, float volume)
@@ -40,7 +45,6 @@ public class SoundFXManager : MonoBehaviour
         float clipLength = audioSource.clip.length;
         Destroy(audioSource.gameObject, clipLength);
     }
-
 
     public void PlayRandomSoundFXClip(AudioClip[] audioClip, Transform spawn, float volume)
     {
@@ -73,6 +77,7 @@ public class SoundFXManager : MonoBehaviour
             _overrided = true;
         _volume = volume;
     }
+
     public void SetVolume(float volume)
     {
         ChangeVolume(volume);
@@ -98,4 +103,13 @@ public class SoundFXManager : MonoBehaviour
         _soundFXObject.pitch = 1f;
     }
 
+    private void OnDestroy()
+    {
+        AudioSource[] _allClips = UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None);
+        foreach (AudioSource clip in _allClips)
+        {
+            if (clip != null && clip.gameObject != null)
+                Destroy(clip.gameObject);
+        }
+    }
 }
