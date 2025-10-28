@@ -3,11 +3,12 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.Windows;
 
 public class PlayerController : MonoBehaviour
 {
+    private InputSystem_Actions _input;
     private Rigidbody2D _rb;
-    private bool isFacingRight = true; // false если по default повернут в влево
 
     [Header("Moving")]
     [SerializeField] private float _speed = 8.0f;
@@ -47,14 +48,16 @@ public class PlayerController : MonoBehaviour
     private float wallJumpTimer;
     public Vector2 wallJumpPower = new Vector2(5f, 10f);
 
-    public static event Action CancelCameraLookDown, CameraLookDown;
-
+    private bool isFacingRight = true; // false если по default повернут в влево
     private Coroutine _playerControlsCamera = null;
     private PlayerAudio _playerAudio;
+
+    public static event Action CancelCameraLookDown, CameraLookDown;
 
     public void OnJump(InputAction.CallbackContext context)
     {
         if (_rb == null) return;
+
         if (context.performed && _jumpsRemaining > 0)
         {
             _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, JumpPower);
@@ -76,24 +79,17 @@ public class PlayerController : MonoBehaviour
 
             //Force Flip
             if (transform.localScale.x != wallJumpDirection)
-            {
                 MakeFlip();
-            }
+
             // Запланировать автоматическую отмену прыжка от стены
             // через wallJumpTime + 0.1 секунды
             Invoke(nameof(CancelWallJump), wallJumpTime + 0.1f);
         }
     }
 
-    public float GetPlayerSpeed()
-    {
-        return _speed;
-    }
+    public float GetPlayerSpeed() => _speed;
 
-    public bool FacingRight()
-    {
-        return isFacingRight;
-    }
+    public bool FacingRight() => isFacingRight;
 
     public void OnMoving(InputAction.CallbackContext context)
     {
@@ -131,6 +127,9 @@ public class PlayerController : MonoBehaviour
 
         _playerControlEnabled = true;
         _playerAudio = this.GetComponent<PlayerAudio>();
+
+        _input = new InputSystem_Actions();
+        _input.Enable();
     }
 
     private void Update()
@@ -150,19 +149,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void ApplyMovement()
-    {
-        _rb.linearVelocity = new Vector2(_direction.x * _speed, _rb.linearVelocityY);
-    }
+    private void ApplyMovement() => _rb.linearVelocity = new Vector2(_direction.x * _speed, _rb.linearVelocityY);
 
     private void Gravity()
     {
         if (_rb.linearVelocity.y < 0)
         {
             _rb.gravityScale = _originalGravityScale * FallMultiplier;
-            _rb.linearVelocity = new Vector2(
-                                        _rb.linearVelocity.x,
-                                        Mathf.Max(_rb.linearVelocity.y, -MaxFallSpeed));
+            _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, Mathf.Max(_rb.linearVelocity.y, -MaxFallSpeed));
         }
         else
         {
@@ -170,10 +164,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private bool OnWall()
-    {
-        return Physics2D.OverlapBox(wallCheckPos.position, _wallCheckSize, 0, _wallCheckLayer);
-    }
+    private bool OnWall() => Physics2D.OverlapBox(wallCheckPos.position, _wallCheckSize, 0, _wallCheckLayer);
 
     private void ProcessWallSlide()
     {
@@ -206,10 +197,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void CancelWallJump()
-    {
-        isWallJumping = false;
-    }
+    private void CancelWallJump() => isWallJumping = false;
 
     private void IsOnGround()
     {
@@ -260,6 +248,11 @@ public class PlayerController : MonoBehaviour
         _playerControlEnabled = false;
         yield return new WaitForSeconds(duration);
         _playerControlEnabled = true;
+    }
+
+    private void OnDisable()
+    {
+        _input.Disable();
     }
 
     private void OnDrawGizmos()

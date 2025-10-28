@@ -4,9 +4,6 @@ using UnityEngine;
 
 public class DuckController : MonoBehaviour
 {
-    //HACK: debugInfo удалить после
-    [SerializeField, TextArea] private string debugInfo;
-
     private Rigidbody2D _rb;
     private Collider2D _collider;
 
@@ -185,27 +182,25 @@ public class DuckController : MonoBehaviour
     private IEnumerator Behaviour()
     {
         SetUpBehaviour();
+
         while (true)
         {
             if (IsAirborne && !IsFollowing)
             {
-                debugInfo = nameof(FloatingBehaviour);
                 yield return FloatingBehaviour();
             }
             else if (!IsFollowing && !IsAirborne)
             {
                 _duckAudio.PlayDamageSounds(transform, 1.0f);
-                debugInfo = nameof(JumpBeforeWandering);
                 yield return JumpBeforeWandering();
-                debugInfo = nameof(WanderBehaviour);
                 yield return WanderBehaviour();
             }
             else if (IsFollowing)
             {
                 this._rb.linearVelocity = Vector2.zero;
-                debugInfo = nameof(FollowBehaviour);
                 FollowBehaviour();
             }
+
             yield return null;
         }
     }
@@ -213,14 +208,14 @@ public class DuckController : MonoBehaviour
     private void InitCatchArea()
     {
         if (_catchArea == null && this.transform.childCount > 0)
-        {
             _catchArea = this.transform.Find("CatchArea").transform;
-        }
+
         if (_catchArea == null)
         {
             GameObject obj = new GameObject("CatchArea");
             this._catchArea = obj.transform;
         }
+
         if (duckLayer.value == 0)
             duckLayer = 1 << this.gameObject.layer;
     }
@@ -239,7 +234,9 @@ public class DuckController : MonoBehaviour
 
     private void FollowPlayer(Transform playerTarget)
     {
-        if (playerTarget == null && _plAttach == null) return;
+        if (playerTarget == null && _plAttach == null)
+            return;
+
         PlayerAttachment p = _plAttach;
 
         if (_plAttach == null)
@@ -249,16 +246,13 @@ public class DuckController : MonoBehaviour
         {
             p.UpdateLink();
             bool playerAlreadyHasDuck = !p.hasFollower;
+
+            //add first Duck in queue  or  add duck to other ducks in queue
             if (playerAlreadyHasDuck)
-            {
-                //add first Duck
                 AddDuck(p, p.transform, true, false, playerAlreadyHasDuck);
-            }
             else
-            {
-                //add duck to other ducks
                 AddDuck(p, p.followChild, true, false, playerAlreadyHasDuck);
-            }
+
             _duckAudio.PlayQuackSounds(transform, 0.8f);
         }
         else
@@ -285,6 +279,7 @@ public class DuckController : MonoBehaviour
 
         // если target duck
         lastDuckTarget.gameObject.TryGetComponent<DuckController>(out DuckController lead);
+
         if (lead != null && !lead.HasFollower)
         {
             lead.HasFollower = true;
@@ -299,6 +294,7 @@ public class DuckController : MonoBehaviour
 
             if (_plAttach != null)
                 _plAttach.UpdateLastInLine(this.transform);
+
             _duckAudio.PlayQuackSounds(transform, 0.8f);
         }
         else
@@ -308,27 +304,23 @@ public class DuckController : MonoBehaviour
     private void CalcBounds()
     {
         if (_sr != null)
-        {
             this._offset = _sr.bounds.size.x;
-        }
     }
 
     private void FixedUpdate()
     {
         CatchAreaCheck();
-        //CheckCollisions();
     }
 
+    // If called in FixedUpdate, duck is collected upon collision with exit (level's exit)
     private void CheckCollisions()
     {
         if (_exit != null && !IsLocked)
         {
             var exitCollider = _exit.GetComponent<Collider2D>();
 
-            if (_collider != null && _collider.bounds.Intersects(exitCollider.bounds))
-            {
+            if (_collider.bounds.Intersects(exitCollider.bounds))
                 _exit.DetachLastOne();
-            }
         }
     }
 
@@ -402,13 +394,8 @@ public class DuckController : MonoBehaviour
         Log($"Exit Wandering");
     }
 
-    //cancel Airborn, save position
-
     private void FollowBehaviour()
     {
-        //следуем за объектом.
-        //Turnoff check Collider (но стены должно огибать) and follow
-        // if (_rb != null)        this._rb.simulated = false;
         Log($"Start {nameof(FollowBehaviour)}");
 
         if (_player == null)
@@ -416,10 +403,12 @@ public class DuckController : MonoBehaviour
             Debug.LogError("Player not init");
             return;
         }
+
         if (IsFollowing && _followParent != null)
         {
             this._rb.simulated = false;
             Vector3 targetPos;
+
             if (!_player.FacingRight())
             {
                 targetPos = new Vector3(this._followParent.position.x + _offset, _player.transform.position.y);
@@ -431,8 +420,7 @@ public class DuckController : MonoBehaviour
                 _sr.flipX = false;
             }
 
-            transform.position = Vector3.SmoothDamp(transform.position, targetPos,
-                ref _velocity, _smoothTime);
+            transform.position = Vector3.SmoothDamp(transform.position, targetPos, ref _velocity, _smoothTime);
         }
     }
 
@@ -466,21 +454,15 @@ public class DuckController : MonoBehaviour
     private void CatchAreaCheck()
     {
         if (IsFollowing || _plAttach == null || IsLocked)
-        {
             return;
-        }
 
         Vector2 position = new(_catchArea.position.x, _catchArea.position.y + offsetY);
         if (Physics2D.OverlapCircle(position, _catchRadius, playerLayer))
         {
             if (!_plAttach.hasFollower)
-            {
                 FollowPlayer(_plAttach.transform);
-            }
             else if (_plAttach.hasFollower && _plAttach.lastFollowChild != null)
-            {
                 FollowDuck(_plAttach.lastFollowChild);
-            }
         }
         else if (experimentalChaining)
         {
@@ -493,10 +475,9 @@ public class DuckController : MonoBehaviour
         if (_plAttach.hasFollower && _plAttach.lastFollowChild != null)
         {
             float dist = Vector2.Distance(position, _plAttach.lastFollowChild.position);
+
             if (dist <= _catchRadius)
-            {
                 FollowDuck(_plAttach.lastFollowChild);
-            }
         }
     }
 
@@ -512,8 +493,12 @@ public class DuckController : MonoBehaviour
 
     private void HandleOutOfBounds(GameObject outOfBoundDuck)
     {
-        if (outOfBoundDuck == null || IsLocked || _coReturnToSpawn != null) return;
-        if (outOfBoundDuck != this.gameObject) return;
+        if (outOfBoundDuck == null || IsLocked || _coReturnToSpawn != null)
+            return;
+
+        if (outOfBoundDuck != this.gameObject)
+            return;
+
         IsLocked = true;
         Debug.Log("OutOfBounds?");
         ReturnBackToSpawn();
@@ -522,12 +507,9 @@ public class DuckController : MonoBehaviour
     private void Log(string msg)
     {
         if (isLogging)
-        {
             Debug.Log(msg);
-        }
     }
 
-    //TODO:  ReturnBackToSpot
     private void ReturnBackToSpawn()
     {
         _coReturnToSpawn = StartCoroutine(ReturnToSpawnPoint());
@@ -535,9 +517,9 @@ public class DuckController : MonoBehaviour
 
     private IEnumerator ReturnToSpawnPoint()
     {
-        WaitForSeconds wait = new WaitForSeconds(0.5f);
         Color baseColor = _sr.color;
         _sr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 0.5f);
+
         //end the behaivior cycle
         if (_coBehaviour != null)
         {
@@ -545,9 +527,10 @@ public class DuckController : MonoBehaviour
             _coBehaviour = null;
         }
 
-        debugInfo = nameof(MoveToSpawnThroughWalls);
         if (_rb != null)
+        {
             yield return MoveToSpawnThroughWalls();
+        }
         else
         {
             _coBehaviour ??= StartCoroutine(Behaviour());
@@ -555,25 +538,11 @@ public class DuckController : MonoBehaviour
             yield break;
         }
 
-        debugInfo = nameof(PrepareForFloating);
         //Reset object to Spawn state
         PrepareForFloating();
         _duckAudio.PlayQuackSounds(this.transform, 1.0f);
 
-        //HACK: удалить после дебага
-        /*
-        Debug.Log($"Duck refs:\n" +
-            $"{nameof(IsFollowing)} -> <color=Green>{IsFollowing}</color>\n" +
-            $"{nameof(IsAirborne)} -> <color=Green>{IsAirborne}</color>\n" +
-            $"{nameof(IsBusy)} -> <color=Green>{IsBusy}</color>\n" +
-            $"{nameof(_followParent)} -> <color=cyan>{_followParent}</color>\n" +
-            $"{nameof(_followChild)} -> <color=cyan>{_followChild}</color>\n" +
-            $"{nameof(_followChild)} -> <color=cyan>{}</color>\n" +
-            $"");
-        */
-
         // IsBusy will automatically resets in Behaviour
-
         _coBehaviour ??= StartCoroutine(Behaviour());
         _sr.color = baseColor;
         _coReturnToSpawn = null;

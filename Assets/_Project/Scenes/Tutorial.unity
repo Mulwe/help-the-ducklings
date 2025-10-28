@@ -61175,7 +61175,6 @@ GameObject:
   m_Component:
   - component: {fileID: 721051419}
   - component: {fileID: 721051421}
-  - component: {fileID: 721051420}
   m_Layer: 0
   m_Name: DuckSpawner (1)
   m_TagString: Untagged
@@ -61206,21 +61205,6 @@ Transform:
   - {fileID: 475635884}
   m_Father: {fileID: 459649605}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &721051420
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 721051418}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 84f3bd4f1f072474ca2da043a3062390, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gizmoColor: {r: 1, g: 0, b: 0.64041376, a: 1}
-  title: _spot
-  gizmoRadius: 0.4
 --- !u!114 &721051421
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -61524,7 +61508,6 @@ GameObject:
   m_Component:
   - component: {fileID: 764235870}
   - component: {fileID: 764235869}
-  - component: {fileID: 764235871}
   m_Layer: 0
   m_Name: DuckSpawner
   m_TagString: Untagged
@@ -61579,21 +61562,6 @@ Transform:
   - {fileID: 515458048}
   m_Father: {fileID: 459649605}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &764235871
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 764235868}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 84f3bd4f1f072474ca2da043a3062390, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gizmoColor: {r: 0, g: 1, b: 0, a: 1}
-  title: _spot
-  gizmoRadius: 0.25
 --- !u!1 &770308059
 GameObject:
   m_ObjectHideFlags: 0
@@ -67047,7 +67015,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 1175099070104208577, guid: 60ed000eac6ab9f4e86e1a81a26997a8, type: 2}
-  m_audioClip: {fileID: 8300000, guid: fba20e6da90f37a489e2d5c9a9a188dc, type: 3}
+  m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: fba20e6da90f37a489e2d5c9a9a188dc, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 0.5

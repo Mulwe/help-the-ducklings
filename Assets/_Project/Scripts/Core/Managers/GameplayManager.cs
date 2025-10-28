@@ -25,7 +25,6 @@ public class GameplayManager : MonoBehaviour
     private bool _showMessage = false;
     private bool _isTutorial = false;
 
-
     [Tooltip("Data")]
     private SpawnManager _spawnManager;
     private PlayerController _player;
@@ -35,7 +34,6 @@ public class GameplayManager : MonoBehaviour
     private WaitForSeconds _waitForTwoSeconds = new WaitForSeconds(2f);
 
     public static Action TutorialFinished;
-
 
     public void Initialize(PlayerController player, TextMeshProUGUI t, ExitController exit, SpawnManager sp, bool activateTutorial)
     {
@@ -57,6 +55,7 @@ public class GameplayManager : MonoBehaviour
 
         _coStartGameplay = StartCoroutine(StartGameplay());
     }
+
     public void SetGoal(int newGoalScore)
     {
         if (newGoalScore < 0) return;
@@ -110,7 +109,6 @@ public class GameplayManager : MonoBehaviour
         }
     }
 
-
     // -1 _spawnManager doesnt have DuckSpawner or not init
     private int GetDucksAmount()
     {
@@ -119,12 +117,8 @@ public class GameplayManager : MonoBehaviour
             foreach (SpawnController controller in _spawnManager.GetSpawners())
             {
                 if (controller != null)
-                {
                     if (controller.GetSpawnedPrefab() != null && controller.GetSpawnedPrefab().CompareTag("Duck"))
-                    {
                         return controller.GetSpawnedObjects().Count;
-                    }
-                }
             }
         }
         return -1;
@@ -144,6 +138,7 @@ public class GameplayManager : MonoBehaviour
             ExitController.OnDucksCollected -= HandleCollectedOnTutorial;
         else
             ExitController.OnDucksCollected -= HandleCollected;
+
         StopAllCoroutines();
         _coStartGameplay = null;
         _coEvent = null;
@@ -151,48 +146,30 @@ public class GameplayManager : MonoBehaviour
         _coPopUpMessage = null;
     }
 
-
-
     private void SetGreetingText()
     {
-        if (_isTutorial)
-        {
-            //UpdatePopUpText($"Deliver the ducks to the exit:\n(0/{_amount})");
-        }
-        else
-        {
+        if (!_isTutorial)
             UpdatePopUpText($"Ducks left:\n(0/{_amount})");
-        }
     }
 
     private void HandleCollected(int collectedCount)
     {
         if (_exit != null)
-        {
-            _coEvent ??= StartCoroutine(UpdateTextUI
-                        ($"Almost there!\nYou saved {_exit.Score} <color=yellow>ducklings</color>\n.",
-                        $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
-        }
+            _coEvent ??= StartCoroutine(
+                UpdateTextUI($"Almost there!\nYou saved {_exit.Score} <color=yellow>ducklings</color>\n.",
+                             $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
     }
 
     private void HandleCollectedOnTutorial(int collectedCount)
     {
         if (_exit != null)
-        {
-            _coEvent ??= StartCoroutine(UpdateTextUI
-                        ($"Nice job!\n.",
-                        $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
-        }
+            _coEvent ??= StartCoroutine(
+                UpdateTextUI($"Nice job!\n.",
+                             $"Ducks left to save: <color=yellow>{_goal - _exit.Score}.</color>"));
     }
 
-
-    private void UpdatePopUpText(string msg)
-    {
-        if (_popUpText != null)
-        {
-            _popUpText.text = msg;
-        }
-    }
+    private void UpdatePopUpText(string msg) =>
+        _popUpText.text = msg;
 
     private IEnumerator UpdateTextUI(string msg, string msg2)
     {
@@ -212,33 +189,24 @@ public class GameplayManager : MonoBehaviour
         _coEvent = null;
     }
 
-
     private void UpdateAmount()
     {
         if (GameManager.Instance == null) return;
-        if (GameManager.Instance.GetDucks() != null)
-        {
-            _amount = GameManager.Instance.GetDucks().Count;
-        }
-    }
 
+        if (GameManager.Instance.GetDucks() != null)
+            _amount = GameManager.Instance.GetDucks().Count;
+    }
 
     /// <summary>
     ///  while  condition false - wait
     /// </summary>
-    /// <param name="condition"></param>
-    /// <param name="onAction"></param>
-    /// <returns></returns>
     private IEnumerator WaitForCondition(Func<bool> condition, System.Action onAction)
     {
-        // while  condition false - wait
         while (!condition())
-        {
             yield return null;
-        }
+
         onAction?.Invoke();
     }
-
 
     private void ShowPopUpText(string message, float duration)
     {
@@ -247,28 +215,29 @@ public class GameplayManager : MonoBehaviour
         _duration = duration;
     }
 
-
-
     private IEnumerator ShowMessage(float delay, bool showMessage)
     {
         _duration = delay;
         _showMessage = showMessage;
         WaitForSeconds newWait = new WaitForSeconds(delay);
+
         while (true)
         {
             if (_popUpText != null && _showMessage)
             {
                 if (!_popUpText.gameObject.activeSelf)
-                {
                     _popUpText.gameObject.SetActive(true);
-                }
+
                 _popUpText.enabled = true;
+
                 if (_duration != delay)
                 {
                     newWait = new WaitForSeconds(_duration);
                     delay = _duration;
                 }
+
                 yield return newWait;
+
                 _popUpText.enabled = false;
                 _showMessage = false;
             }
@@ -276,36 +245,36 @@ public class GameplayManager : MonoBehaviour
         }
     }
 
-    IEnumerator Win()
+    private IEnumerator Win()
     {
         yield return _waitForTwoSeconds;
+
         while (true)
         {
-
             if (_exit != null)
-            {
                 _levelFinished = _exit.Score == _amount || _exit.Score >= _goal;
-            }
+
             if (_levelFinished && _isTutorial)
             {
-                string msg = $"Good job!\n You're score is <color=yellow>{_exit.Score}</color>";
-                ShowPopUpText(msg, 3f);
-                Debug.Log("Load next level.Transition");
+                ShowPopUpText($"Good job!\n You're score is <color=yellow>{_exit.Score}</color>", 3f);
+
+                //Debug.Log("Load next level.Transition");
                 // delay before loading level
                 yield return _waitForTwoSeconds;
+
                 TutorialFinished?.Invoke();
                 yield break;
             }
+
             if (_levelFinished && !_isTutorial)
             {
-                string msg = $"You're won!\n You're score is {_exit.Score}\n Thanks for playing";
-                ShowPopUpText(msg, 3f);
+                ShowPopUpText($"You're won!\n You're score is {_exit.Score}\n Thanks for playing", 3f);
                 break;
             }
             yield return (_waitForSecond);
         }
-        yield return new WaitForSeconds(2f);
+
+        yield return _waitForTwoSeconds;
         UnityEngine.Application.Quit();
     }
-
 }

@@ -33,7 +33,7 @@ public class PlayerAttachment : MonoBehaviour
     //first duck in Line
     public void CreateFollowChild(Transform followingChild)
     {
-        Debug.Log("Create first follow child");
+        //Debug.Log("Create first follow child");
 
         this.followChild = followingChild;
         hasFollower = true;

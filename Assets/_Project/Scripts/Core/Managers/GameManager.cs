@@ -18,59 +18,48 @@ public class GameManager : MonoBehaviour
     private List<EnemyController> _enemies;
     private List<DuckController> _collected;
 
-    private Coroutine _waitCameraInit = null;
     private Coroutine _startMonitor = null;
+    private Coroutine _waitCameraInit = null;
 
     private PlayerController _playerController;
 
-    public void SetPlyerController(PlayerController playerController)
-    {
-        _playerController = playerController;
-    }
+    public void SetPlyerController(PlayerController playerController) => _playerController = playerController;
 
     public List<int> GetDuckIndicesByCondition(System.Func<DuckController, bool> condition)
     {
         var indices = new List<int>();
+
         for (int i = 0; i < _ducks.Count; i++)
-        {
             if (condition(_ducks[i]))
                 indices.Add(i);
-        }
+
         return indices;
     }
 
     public List<int> GetEnemyIndicesByCondition(System.Func<EnemyController, bool> condition)
     {
         var indices = new List<int>();
+
         for (int i = 0; i < _enemies.Count; i++)
-        {
             if (condition(_enemies[i]))
                 indices.Add(i);
-        }
+
         return indices;
     }
 
     public void SetSpecificDuckActive(int index, bool active)
     {
         if (index >= 0 && index < _ducks.Count)
-        {
             _am.ChangeDuckActivity(_ducks[index], active);
-        }
     }
 
     public void SetSpecificEnemyActive(int index, bool active)
     {
         if (index >= 0 && index < _enemies.Count)
-        {
             _am.ChangeEnemyActivity(_enemies[index], active);
-        }
     }
 
-    public int GetCollectedCount()
-    {
-        if (_collected != null) return _collected.Count;
-        return 0;
-    }
+    public int GetCollectedCount() => _collected != null ? _collected.Count : 0;
 
     private void EnableAllObjects(bool isActive)
     {
@@ -78,35 +67,17 @@ public class GameManager : MonoBehaviour
         _am.ChangeEnemiesActivity(_enemies, isActive);
     }
 
-    public void SetDucksActivity(bool isActive)
-    {
-        _am.ChangeDucksActivity(_ducks, isActive);
-    }
+    public void SetDucksActivity(bool isActive) => _am.ChangeDucksActivity(_ducks, isActive);
 
-    public void SetEnemiesActivity(bool isActive)
-    {
-        _am.ChangeEnemiesActivity(_enemies, isActive);
-    }
+    public void SetEnemiesActivity(bool isActive) => _am.ChangeEnemiesActivity(_enemies, isActive);
 
-    public int GetActiveDucksCount()
-    {
-        return _ducks.FindAll(duck => duck != null && duck.gameObject.activeSelf).Count;
-    }
+    public int GetActiveDucksCount() => _ducks.FindAll(duck => duck != null && duck.gameObject.activeSelf).Count;
 
-    public int GetActiveEnemiesCount()
-    {
-        return _enemies.FindAll(enemy => enemy != null && enemy.gameObject.activeSelf).Count;
-    }
+    public int GetActiveEnemiesCount() => _enemies.FindAll(enemy => enemy != null && enemy.gameObject.activeSelf).Count;
 
-    public List<DuckController> GetDucks()
-    {
-        return _am.GetDucks<DuckController>();
-    }
+    public List<DuckController> GetDucks() => _am.GetDucks<DuckController>();
 
-    public List<EnemyController> GetEnemies()
-    {
-        return _am.GetEnemies<EnemyController>();
-    }
+    public List<EnemyController> GetEnemies() => _am.GetEnemies<EnemyController>();
 
     public void TurnOffActivityMonitor()
     {
@@ -117,6 +88,7 @@ public class GameManager : MonoBehaviour
     public void ChangeActivityMonitor(bool isActive)
     {
         _enableActivityMonitoring = isActive;
+
         if (!_enableActivityMonitoring)
             _am?.StopMonitoring();
     }
@@ -138,10 +110,9 @@ public class GameManager : MonoBehaviour
     private void HandlePlayerReferenceRequest(MonoBehaviour sender)
     {
         if (sender != null && sender is CameraController cam)
-        {
             if (_playerController != null && _playerController.gameObject.activeInHierarchy)
                 cam.SetTarget(_playerController.gameObject);
-        }
+
         // etc. send to sender reference
     }
 
@@ -149,10 +120,12 @@ public class GameManager : MonoBehaviour
     {
         ExitController.OnDuckReachedExit += HandleCollectedDuck;
         CameraController.PlayerReferenceRequested += HandlePlayerReferenceRequest;
+
         if (CameraController.Instance != null)
         {
             if (_startMonitor != null)
                 StopCoroutine(_startMonitor);
+
             _startMonitor = StartCoroutine(SetupActivityMonitor());
         }
         else
@@ -175,7 +148,6 @@ public class GameManager : MonoBehaviour
             DeleteContainedObjectFromList(collectedDuck, _ducks);
             DeactivateAndHide(collectedDuck.gameObject);
             AddObject(collectedDuck, ref _collected);
-            //Debug.Log($"Player already collected <color=yellow>{_collected.Count}</color> ducks");
         }
     }
 
@@ -190,7 +162,7 @@ public class GameManager : MonoBehaviour
     {
         if (CameraController.Instance != null && _am != null)
         {
-            AddDucksAndEnemiesFromSceneManualy();
+            AddDucksAndEnemiesFromSceneManually();
             if (_ducks.Count == 0 || _enemies.Count == 0)
             {
                 if (!_sp.IsInit)
@@ -199,6 +171,7 @@ public class GameManager : MonoBehaviour
             }
             if (_ducks.Count == 0)
                 Debug.LogError("GetDataFromSpawnManager zero ducks");
+
             Debug.Log($"Initialized: <color=yellow>{_ducks.Count}</color> ducks, <color=red>{_enemies.Count}</color> enemies");
 
             // Init ActivityManager Settings
@@ -207,9 +180,7 @@ public class GameManager : MonoBehaviour
             _am.SetCullingDistance(_cullingDistance);
 
             if (_enableActivityMonitoring)
-            {
                 _am.StartMonitoring();
-            }
             else
                 Debug.Log("ActivityManager disabled");
         }
@@ -217,7 +188,9 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("CameraController not found, ActivityManager disabled");
         }
+
         yield return null;
+
         _startMonitor = null;
     }
 
@@ -229,12 +202,11 @@ public class GameManager : MonoBehaviour
             _enemies?.Clear();
             _am.CleanDucks();
             _am.CleanEnemies();
+
             for (int i = 0; i < 10; i++)
             {
-                List<DuckController> ducks =
-                    GetControllers<DuckController>(_sp, "Duck");
-                List<EnemyController> enemies =
-                    GetControllers<EnemyController>(_sp, "Enemy");
+                List<DuckController> ducks = GetControllers<DuckController>(_sp, "Duck");
+                List<EnemyController> enemies = GetControllers<EnemyController>(_sp, "Enemy");
 
                 if (ducks != null)
                 {
@@ -250,58 +222,64 @@ public class GameManager : MonoBehaviour
 
                 if ((_ducks != null || _enemies != null) && i > 1)
                     yield break;
+
                 yield return null;
             }
         }
         else
             Debug.LogError("Failed to get data from SpawnManager");
+
         yield return null;
     }
 
-    //TODO: если несколько спаунеров складывать общее количество
-    // проход по всем
-    // проход только по одному
+    // HACK: если несколько спаунеров должен складывать общее количество
+    /// <summary>
+    /// Gets all controllers of type T from spawned objects by tag.
+    /// </summary>
+    /// <remarks>
+    /// LIMITATION: Only retrieves controllers from the FIRST SpawnController with matching tag.
+    /// If multiple SpawnControllers share the same tag (e.g. 2 enemy spawners),
+    /// only objects from the first one are included.
+    /// TODO: Refactor to collect from ALL SpawnControllers with the tag, not just first.
+    /// </remarks>
     private List<T> GetControllers<T>(SpawnManager sp, string tag)
     {
         SpawnController spawnController = sp.GetSpawnController(tag);
 
         if (spawnController == null)
-        {
             return null;
-        }
+
         List<GameObject> list = spawnController.GetSpawnedObjects();
         List<T> returnList = new List<T>();
+
         if (list != null)
         {
             foreach (GameObject obj in list)
-            {
                 if (obj != null && obj.TryGetComponent<T>(out T controller))
-                {
                     returnList.Add(controller);
-                }
-            }
+
             if (returnList.Count == list.Count)
                 return returnList;
         }
+
         return null;
     }
 
     private IEnumerator WaitForCameraInit()
     {
         while (CameraController.Instance == null)
-        {
             yield return new WaitForSeconds(0.1f);
-        }
 
         while (CameraController.Instance.GetCamera() == null)
-        {
             yield return new WaitForSeconds(0.1f);
-        }
+
         // if player on scene send to camera
         if (_playerController != null)
             CameraController.Instance.SetTarget(_playerController.gameObject);
+
         if (_startMonitor != null)
             StopCoroutine(_startMonitor);
+
         _startMonitor = StartCoroutine(SetupActivityMonitor());
         _waitCameraInit = null;
     }
@@ -314,12 +292,16 @@ public class GameManager : MonoBehaviour
         _enemies = GetEnemies();
     }
 
-    private void AddDucksAndEnemiesFromSceneManualy()
+    private void AddDucksAndEnemiesFromSceneManually()
     {
         DuckController[] duckControllers = FindObjectsByType<DuckController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         EnemyController[] enemiesControllers = FindObjectsByType<EnemyController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        // Register in Activity manager
         _am.AddDucks(duckControllers);
         _am.AddEnemies(enemiesControllers);
+
+        // Receive and cache controllers
         _ducks = GetDucks();
         _enemies = GetEnemies();
     }
@@ -342,19 +324,19 @@ public class GameManager : MonoBehaviour
     // - Therefore, we use static Equals(x, component), which safely handles null
     //   and works for both UnityEngine.Object (with custom null semantics)
     //   and regular .NET types.
-    private bool ContainsComponent<T>(T component, List<T> list)
-    {
-        return list.Any(x => Equals(x, component));
-    }
+    private bool ContainsComponent<T>(T component, List<T> list) => list.Any(x => Equals(x, component));
 
     private bool DeleteContainedObjectFromList<T>(T toDelete, List<T> fromList)
     {
-        if (toDelete == null || fromList == null) return false;
+        if (toDelete == null || fromList == null)
+            return false;
+
         if (!ContainsComponent(toDelete, fromList))
         {
             fromList.Remove(toDelete);
             return true;
         }
+
         return false;
     }
 

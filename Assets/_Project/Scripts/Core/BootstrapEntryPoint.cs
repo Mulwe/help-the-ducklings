@@ -29,6 +29,4 @@ public class BootstrapEntryPoint : MonoBehaviour
         Application.targetFrameRate = 60;
         StartCoroutine(Initialiaze());
     }
-
-
 }

@@ -1,6 +1,6 @@
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,7 +17,11 @@ public class EntryPointScene : MonoBehaviour
     [SerializeField] private SoundMixerManager _soundMixerManager;
     [SerializeField] private PlayerController _player;
 
+    [Range(0f, 1f)]
+    [SerializeField] private float _baseSoundVolume = 0.8f;
+
     private Coroutine _coPlayerInit;
+    private UniTask _task;
 
     private void Awake()
     {
@@ -25,9 +29,7 @@ public class EntryPointScene : MonoBehaviour
         if (_player == null)
             MissedPlayerReference();
         else
-        {
             Initialize();
-        }
     }
 
     private void OnEnable()
@@ -53,11 +55,13 @@ public class EntryPointScene : MonoBehaviour
     {
         if (_gameplay != null && _spawnManager != null)
         {
+            StartCoroutine(WaitInitSoundMixer(_baseSoundVolume));
             _gameplay.Initialize(_player, _tutorialText, _exit, _spawnManager, SceneParameters.isTutorial);
-            StartCoroutine(WaitInitSoundMixer(0.8f));
         }
         else
+        {
             Debug.LogWarning("Failed initialization");
+        }
     }
 
     private void GetUninitializedObjects()
@@ -68,6 +72,7 @@ public class EntryPointScene : MonoBehaviour
             _spawnManager ??= obj.GetComponent<SpawnManager>();
             _gameplay ??= obj.GetComponent<GameplayManager>();
         }
+
         if (_tutorialText == null)
             FindTutorial();
 
@@ -82,12 +87,14 @@ public class EntryPointScene : MonoBehaviour
     {
         int t = attemps <= 0 ? 1 : attemps;
         WaitForSeconds wait = new WaitForSeconds(0.1f);
+
         while (condition() != true && t > 0)
         {
             cycleAction?.Invoke();
             yield return wait;
             t--;
         }
+
         afterAction?.Invoke();
     }
 
@@ -95,6 +102,7 @@ public class EntryPointScene : MonoBehaviour
     {
         var tmp = GameObject.FindObjectsByType<TextMeshProUGUI>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         int uiLayer = LayerMask.NameToLayer("UI");
+
         foreach (var t in tmp)
         {
             if (t != null && t.gameObject.layer == uiLayer)
@@ -102,32 +110,27 @@ public class EntryPointScene : MonoBehaviour
         }
     }
 
-    private IEnumerator WaitSoundMixer(float mainVolume)
-    {
-        while (true)
-        {
-            SoundMixerManager manager = GameObject.FindFirstObjectByType<SoundMixerManager>();
-            if (manager != null)
-            {
-                _soundMixerManager = manager;
-                _soundMixerManager.SetDefaultValue(mainVolume);
-                break;
-            }
-            yield return new WaitForSeconds(0.1f);
-        }
-    }
-
     private IEnumerator WaitInitSoundMixer(float mainVolume)
     {
-        while (SoundFXManager.Instance == null)
+        SoundMixerManager soundMixer = null;
+        WaitForSeconds wait = new WaitForSeconds(0.1f);
+
+        while (soundMixer == null)
         {
-            yield return null;
+            soundMixer = GameObject.FindFirstObjectByType<SoundMixerManager>();
+
+            if (soundMixer != null)
+            {
+                _soundMixerManager = soundMixer;
+                break;
+            }
+
+            yield return wait;
         }
-        yield return WaitSoundMixer(mainVolume);
         yield return null;
-        SoundFXManager.Instance.SetVolume(0.8f);
-        SoundFXManager.Instance.AudioMixer.SetMusicVolume(0.1f);
-        SoundFXManager.Instance.AudioMixer.SetSoundFXVolume(0.5f);
+
+        //set base volume or set it manual through SoundFXManager
+        _soundMixerManager.SetDefaultValue(mainVolume);
         SoundFXManager.Instance.BackgroundMusic.PlayMusic();
     }
 
@@ -136,44 +139,12 @@ public class EntryPointScene : MonoBehaviour
         SceneParameters.isTutorial = false;
         SceneParameters.level = SceneLoader.Level_1;
         //save score
-
-        if (SceneLoader.Instance != null)
-        {
-            _ = SceneLoader.Instance.LoadSceneAsync(SceneParameters.level);
-        }
+        LoadScene(SceneParameters.level);
     }
 
-    private async void OnLevelFinished()
+    private void LoadScene(string levelName)
     {
-        if (SceneManager.GetActiveScene().Equals(SceneParameters.level))
-        {
-            int buildIndex = SceneManager.GetActiveScene().buildIndex;
-            //SceneParameters.level = SceneLoader.Instance.GetNextLevel();
-        }
-        // SceneParameters.level  = next
-        //get current
-        //save next
-
-        await TryLoadScene(SceneParameters.level);
-    }
-
-    private async Task TryLoadScene(string sceneName)
-    {
-        int retries = 3;
-        for (int attempt = 1; attempt <= retries; attempt++)
-        {
-            try
-            {
-                await SceneLoader.Instance.LoadSceneAsync(sceneName);
-                Debug.Log("Scene loaded successfully!");
-                return;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"Attempt {attempt} failed: {ex.Message}");
-                await Task.Delay(500);
-            }
-        }
+        _task = SceneLoader.Instance.LoadSceneAsync(levelName);
     }
 
     private void OnDisable()

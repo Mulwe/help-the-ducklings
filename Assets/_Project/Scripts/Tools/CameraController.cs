@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Net.NetworkInformation;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -16,36 +15,44 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float _offset = 2.0f;
     private readonly float _z = -10.0f;
     private bool _cameraFreeToControl = true;
+    private Vector3 _baseFollowOffset = new Vector3(0, 0, -10.0f);
 
     [Tooltip("Cinemachine")]
     private CinemachineBrain _brain;
-
     private CinemachineCamera _currentCinemachineCamera;
-    private CinemachineCamera _transitionCamera;
     private CinemachineFollow _cinemachineFollow;
-    private Vector3 _baseFollowOffset = new Vector3(0, 0, -10.0f);
+    private Coroutine _coCurrentCameraInit;
+
+    [Tooltip("Cinemachine anchor")]
+    private Transform _cameraAnchor;
+    private CinemachineCamera _transitionCamera;
+    private Coroutine _anchorTracking;
+
     public bool IsCameraUnderControl => !_cameraFreeToControl;
 
     private Coroutine _coShaking;
-    private Coroutine _coCurrentCameraInit;
 
     public static Action<MonoBehaviour> PlayerReferenceRequested;
 
     public Camera GetCamera() => _camera;
 
-    public void SetCameraControl(bool isCameraControlled)
-    {
-        _cameraFreeToControl = !isCameraControlled;
-    }
+    public void SetCameraControl(bool isCameraControlled) => _cameraFreeToControl = !isCameraControlled;
 
-    public bool IsCameraControlled()
-    {
-        return (!_cameraFreeToControl);
-    }
+    public bool IsCameraControlled() => (!_cameraFreeToControl);
 
-    public void StopFollowingTarget()
+    public void StopFollowingTarget() => _currentCinemachineCamera.Follow = null;
+
+    public void FocusOnTarget(GameObject newTarget)
     {
-        _currentCinemachineCamera.Follow = null;
+        if (newTarget == null)
+            return;
+
+        if (_anchorTracking != null)
+            StopCoroutine(_anchorTracking);
+
+        _anchorTracking = StartCoroutine(TrackTargetPosition(newTarget));
+
+        SetTarget(_cameraAnchor.gameObject);
     }
 
     public void KeepFollowingTarget()
@@ -61,7 +68,10 @@ public class CameraController : MonoBehaviour
 
     public void SetTarget(GameObject newTarget)
     {
+        DeactivateTransitionCamera();
+        SetCinemachineFollowTarget(newTarget.transform);
         _target = newTarget;
+        ActivateTransitionCamera();
     }
 
     public void Shake()
@@ -72,48 +82,38 @@ public class CameraController : MonoBehaviour
 
     public void OnSceneLoaded()
     {
-        //every loaded scene => parse currentActiveCinemachineCamera and its components
-        _coCurrentCameraInit ??= StartCoroutine(RepeatAction(
-            () => _currentCinemachineCamera == null,
-            () =>
-            {
-                //repeatingAction
-                _currentCinemachineCamera = GetAndUpdateCurrentCamera();
-            },
-            () =>
-            {
-                //postAction
-                //init Camera componets + target
-                InitCameraComponents();
+        _coCurrentCameraInit ??= StartCoroutine(
+        RepeatAction(() => _currentCinemachineCamera == null,
+        () => _currentCinemachineCamera = GetAndUpdateCurrentCamera(),
+        () =>
+        {
+            InitCameraComponents();
 
-                //Initialize _cinemachineFollow and followOffset
-                if (!InitializeCinemachineFollowComponentAndOffset(_currentCinemachineCamera, out _cinemachineFollow, out _baseFollowOffset))
-                    Debug.LogError("Failed to Initialize Cinemachine FollowComponent And FollowOffset");
+            if (!InitializeCinemachineFollowComponentAndOffset(_currentCinemachineCamera, out _cinemachineFollow, out _baseFollowOffset))
+                Debug.LogError("Failed to Initialize Cinemachine FollowComponent And FollowOffset");
 
-                if (GetCurrentFollowTarget() != null)
-                    _target = GetCurrentFollowTarget().gameObject;
-                else
-                    Debug.LogError("Failed to GetCurrentFollowTarget");
+            if (GetCurrentFollowTarget() != null)
+                _target = GetCurrentFollowTarget().gameObject;
+            else
+                Debug.LogError("Failed to GetCurrentFollowTarget");
 
-                _coCurrentCameraInit = null;
-            },
-            1f
-            ));
+            _coCurrentCameraInit = null;
+        },
+        1f
+        ));
     }
 
     public void OnSceneChanged()
     {
+        StopAllCoroutines();
+        _coCurrentCameraInit = null;
+        _anchorTracking = null;
+        _coShaking = null;
+
         _target = null;
         _currentCinemachineCamera = null;
         _cinemachineFollow = null;
-        _transitionCamera = null;
         _cameraFreeToControl = true;
-
-        if (_coCurrentCameraInit != null)
-        {
-            StopCoroutine(_coCurrentCameraInit);
-            _coCurrentCameraInit = null;
-        }
     }
 
     public bool IsObjectVisible2D(GameObject target)
@@ -127,6 +127,7 @@ public class CameraController : MonoBehaviour
         if (renderer != null)
         {
             Bounds targetBounds = renderer.bounds;
+
             if (GeometryUtility.TestPlanesAABB(frustumPlanes, targetBounds))
                 return true;
         }
@@ -155,7 +156,7 @@ public class CameraController : MonoBehaviour
             {
                 _currentCinemachineCamera.Follow = newTarget;
                 _target = newTarget.gameObject;
-                Debug.Log($"{this.name}: Camera target changed");
+                //Debug.Log($"{this.name}: Camera target changed");
             }
         }
     }
@@ -197,6 +198,13 @@ public class CameraController : MonoBehaviour
             _brain.DefaultBlend.Style = CinemachineBlendDefinition.Styles.EaseInOut;
         }
 
+        if (_cameraAnchor == null)
+        {
+            GameObject anchor = new GameObject("CameraAnchor");
+            _cameraAnchor = anchor.transform;
+            _cameraAnchor.SetParent(this.transform);
+        }
+
         if (_camera != null && _brain != null)
             _isInit = true;
     }
@@ -223,6 +231,7 @@ public class CameraController : MonoBehaviour
     {
         WaitForFixedUpdate wait = new WaitForFixedUpdate();
         float t = 0f;
+
         if (condition())
         {
             while (condition() && t < duration)
@@ -235,15 +244,6 @@ public class CameraController : MonoBehaviour
         postAction?.Invoke();
     }
 
-    private void SetCurrentCameraPriority(CinemachineCamera newCamera, int priority)
-    {
-        if (newCamera != null)
-        {
-            _currentCinemachineCamera = newCamera;
-            _currentCinemachineCamera.Priority = priority;
-        }
-    }
-
     //Create new camera for smooth transition
     private void OnPlayerLookDown()
     {
@@ -254,24 +254,21 @@ public class CameraController : MonoBehaviour
         {
             if (_target != null)
             {
-                Vector3 newOffset = new(_baseFollowOffset.x, _baseFollowOffset.y - _offset, _baseFollowOffset.z);
-                ActivateTransitionCamera(newOffset);
+                //Vector3 newOffset = new(_baseFollowOffset.x, _baseFollowOffset.y - _offset, _baseFollowOffset.z);
+                ActivateTransitionCamera();
                 _cameraFreeToControl = false;
             }
         }
     }
 
-    private void ActivateTransitionCamera(Vector3 newOffset)
+    private void ActivateTransitionCamera()
     {
         if (_transitionCamera == null)
-            _transitionCamera = GetOrAddCamera(_target);
+            _transitionCamera = CreateTransitionCamera(_cameraAnchor.gameObject);
 
         if (_transitionCamera != null)
         {
             _currentCinemachineCamera = GetAndUpdateCurrentCamera();
-
-            //_transitionCamera priority should be higher then current
-            _transitionCamera.Priority = _currentCinemachineCamera.Priority + 1;
             _transitionCamera.Prioritize();
             _transitionCamera.enabled = true;
         }
@@ -281,12 +278,12 @@ public class CameraController : MonoBehaviour
 
     private void DeactivateTransitionCamera()
     {
-        if (_transitionCamera == null)
-            _transitionCamera = GetOrAddCamera(_target);
+        if (_transitionCamera != null)
+            _transitionCamera.enabled = false;
 
-        _transitionCamera.enabled = false;
+        if (_currentCinemachineCamera == null)
+            return;
 
-        // ‚ÂÌÛÚ¸Òˇ Í ·‡ÁÓ‚ÓÈ Í‡ÏÂÂ
         _currentCinemachineCamera.enabled = true;
         _currentCinemachineCamera.Prioritize();
     }
@@ -295,7 +292,6 @@ public class CameraController : MonoBehaviour
     {
         DeactivateTransitionCamera();
         _cameraFreeToControl = true;
-        //Debug.Log("Camera: Look Default");
     }
 
     private CinemachineCamera GetAndUpdateCurrentCamera()
@@ -303,6 +299,7 @@ public class CameraController : MonoBehaviour
         if (_brain != null)
         {
             _currentCinemachineCamera = _brain.ActiveVirtualCamera as CinemachineCamera;
+
             if (_currentCinemachineCamera != null)
                 return _currentCinemachineCamera;
         }
@@ -314,6 +311,7 @@ public class CameraController : MonoBehaviour
         if (_brain != null)
         {
             _currentCinemachineCamera = _brain.ActiveVirtualCamera as CinemachineCamera;
+
             if (_currentCinemachineCamera != null)
             {
                 _currentCinemachineCamera.Follow = target;
@@ -323,6 +321,27 @@ public class CameraController : MonoBehaviour
         return false;
     }
 
+    private CinemachineCamera CreateTransitionCamera(GameObject anchorParent)
+    {
+        GameObject camObj = new GameObject("FocusTransitionCamera");
+
+        camObj.transform.SetParent(anchorParent.transform, false);
+
+        CinemachineCamera cam = camObj.AddComponent<CinemachineCamera>();
+        cam.enabled = false;
+        cam.Priority = -1;
+        cam.Follow = anchorParent.transform;
+
+        if (_currentCinemachineCamera != null)
+            CopyLensSettings(cam, _currentCinemachineCamera.Lens);
+
+        CinemachineFollow follow = cam.gameObject.AddComponent<CinemachineFollow>();
+        follow.FollowOffset = _baseFollowOffset;
+
+        return cam;
+    }
+
+    //depricated
     private CinemachineCamera GetOrAddCamera(GameObject target)
     {
         if (target != null)
@@ -334,24 +353,24 @@ public class CameraController : MonoBehaviour
             {
                 objCamera = new GameObject("TransitionCamera");
                 objCamera.transform.parent = target.transform;
-                objCamera.transform.SetParent(target.transform, false); // reset position
-                /*objCamera.transform.localPosition = new Vector3(0, -_offset, 0);     //localPosition ÍÓÓ‰ËÌ‡Ú˚ ÓÚÌÓÒËÚÂÎ¸ÌÓ Ó‰ËÚÂÎˇ*/
+
+                // reset position
+                objCamera.transform.SetParent(target.transform, false);
+
                 transitionCamera = objCamera.AddComponent<CinemachineCamera>();
+
                 if (_currentCinemachineCamera != null)
-                {
                     CopyLensSettings(transitionCamera, _currentCinemachineCamera.Lens);
-                }
             }
             if (transitionCamera != null)
             {
                 transitionCamera.enabled = false;
                 transitionCamera.Priority = -1;
                 transitionCamera.Follow = target.transform;
+
                 CinemachineFollow cinemachineFollow = transitionCamera.gameObject.AddComponent<CinemachineFollow>();
-                if (cinemachineFollow != null)
-                {
-                    cinemachineFollow.FollowOffset = new Vector3(0, -_offset, _z);
-                }
+                cinemachineFollow.FollowOffset = new Vector3(0, -_offset, _z);
+
                 return transitionCamera;
             }
         }
@@ -372,40 +391,28 @@ public class CameraController : MonoBehaviour
     private void ShakeCinemachineCamera(float shakeDuration, float amplitudeGain, float frequencyGain)
     {
         _currentCinemachineCamera = _brain.ActiveVirtualCamera as CinemachineCamera;
+
         if (_currentCinemachineCamera != null && _coShaking == null)
         {
             if (_currentCinemachineCamera.TryGetComponent(out CinemachineBasicMultiChannelPerlin noise))
             {
-                //Debug.Log("Shake Camera");
                 noise.AmplitudeGain = amplitudeGain;
                 noise.FrequencyGain = frequencyGain;
+
                 if (_coShaking != null)
-                {
                     StopCoroutine(_coShaking);
-                }
+
                 _coShaking = StartCoroutine(
-                            DelayedAction(() =>
-                            {
-                                noise.AmplitudeGain = 0f;
-                                noise.FrequencyGain = 0f;
-                                _coShaking = null;
-                            },
-                            shakeDuration));
+                    DelayedAction(
+                        () =>
+                        {
+                            noise.AmplitudeGain = 0f;
+                            noise.FrequencyGain = 0f;
+                            _coShaking = null;
+                        },
+                        shakeDuration));
             }
         }
-    }
-
-    private IEnumerator DelayedAction(System.Action delayedAction, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        delayedAction?.Invoke();
-    }
-
-    private IEnumerator DelayedAction(System.Action preAction, System.Action afterAction, float delay)
-    {
-        preAction?.Invoke();
-        yield return new WaitForSeconds(delay);
-        afterAction?.Invoke();
     }
 
     private void InitCameraComponents()
@@ -415,15 +422,18 @@ public class CameraController : MonoBehaviour
 
         if (_cinemachineFollow == null && _currentCinemachineCamera != null)
             _cinemachineFollow = _currentCinemachineCamera.GetComponent<CinemachineFollow>();
+
         if (_target == null)
         {
             Transform newTarget = GetCurrentFollowTarget();
+
             if (newTarget != null)
                 ChangeCurrentFollowTarget(newTarget);
         }
     }
 
-    private bool InitializeCinemachineFollowComponentAndOffset(CinemachineCamera cinemachine—amera, out CinemachineFollow cinemachineFollow, out Vector3 followOffset)
+    private bool InitializeCinemachineFollowComponentAndOffset
+    (CinemachineCamera cinemachine—amera, out CinemachineFollow cinemachineFollow, out Vector3 followOffset)
     {
         if (cinemachine—amera != null)
         {
@@ -434,22 +444,30 @@ public class CameraController : MonoBehaviour
                 return true;
             }
         }
+
         cinemachineFollow = null;
         followOffset = Vector3.zero;
         return false;
     }
 
-    private bool GetCinemachineFollowOffset(CinemachineCamera cinemachine—amera, out Vector3 followOffset)
+    private IEnumerator TrackTargetPosition(GameObject target)
     {
-        if (cinemachine—amera != null)
+        // watching on anchor while object exists
+        while (target != null && target.activeInHierarchy)
         {
-            if (cinemachine—amera.TryGetComponent<CinemachineFollow>(out CinemachineFollow tmp))
-            {
-                followOffset = tmp.FollowOffset;
-                return true;
-            }
+            _cameraAnchor.position = target.transform.position;
+            yield return null;
         }
-        followOffset = Vector3.zero;
-        return false;
+
+        // if object disappear - anchor will stay on the last position
+        // Camera keeps look on last position
+
+        yield return new WaitForSeconds(1.5f);
+    }
+
+    private IEnumerator DelayedAction(System.Action delayedAction, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        delayedAction?.Invoke();
     }
 }

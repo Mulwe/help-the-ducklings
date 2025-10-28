@@ -1,5 +1,5 @@
+using Cysharp.Threading.Tasks;
 using System;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,10 +9,10 @@ public class SceneLoader : MonoBehaviour
     [SerializeField] private GameObject _loadingScreen;
     [SerializeField] private Camera _loadingCamera;
 
+    private UniTask _task;
+
     public static string LevelTutorial = "Tutorial";
     public static string Level_1 = "Gameplay";
-
-
 
     public static Action OnSceneUnloaded;
     public static Action OnSceneLoaded;
@@ -31,62 +31,49 @@ public class SceneLoader : MonoBehaviour
         }
     }
 
-    public void SetLoadingScreen(GameObject loadingScreen)
-    {
-        _loadingScreen = loadingScreen;
-    }
+    public void SetLoadingScreen(GameObject loadingScreen) => _loadingScreen = loadingScreen;
 
     public void Initialize()
     {
         InitializeSceneParameters();
     }
 
-
-    public async Task LoadSceneAsync(string sceneName)
+    // Async and single threaded (UniTask don't block the main thread)
+    // crucial for WebGL support
+    public async UniTask LoadSceneAsync(string sceneName)
     {
-
-        if (_loadingScreen != null)
-        {
-            _loadingScreen.SetActive(true);
-            _loadingScreen.GetComponentInParent<Canvas>().enabled = true;
-        }
+        _loadingScreen.SetActive(true);
+        _loadingScreen.GetComponentInParent<Canvas>().enabled = true;
 
         var task = LoadScene(sceneName);
 
         await task;
+        await UniTask.Delay(10);
 
-        await Task.Delay(10);
-
-        if (_loadingScreen != null)
-            _loadingScreen.SetActive(false);
-
+        _loadingScreen.SetActive(false);
     }
 
-    private static async Task LoadScene(string sceneName)
+    // Async and single threaded (UniTask don't block the main thread)
+    // crucial for WebGL support
+    private static async UniTask LoadScene(string sceneName)
     {
         OnSceneUnloaded?.Invoke();
         var asyncOperation = SceneManager.LoadSceneAsync(sceneName);
         asyncOperation.allowSceneActivation = false;
 
         while (asyncOperation.progress < 0.9f)
-        {
-            await Task.Yield();
-        }
+            await UniTask.Yield();
 
-        await Task.Delay(500); // half second
+        await UniTask.Delay(500); // half second
 
         asyncOperation.allowSceneActivation = true;
         OnSceneLoaded?.Invoke();
     }
 
-
     private void InitializeSceneParameters()
     {
-        if (SceneParameters.level == null)
-        {
-            SceneParameters.level = SceneLoader.LevelTutorial;
-            //SceneParameters.isTutorial true by default
-        }
+        //SceneParameters.isTutorial true by default
+        SceneParameters.level ??= SceneLoader.LevelTutorial;
     }
 
     //first run
@@ -95,36 +82,21 @@ public class SceneLoader : MonoBehaviour
         if (!SceneManager.GetActiveScene().name.Equals(LevelTutorial) && SceneParameters.isTutorial)
         {
             SceneParameters.level = LevelTutorial;
-            _ = LoadSceneAsync(LevelTutorial);
+            _task = LoadSceneAsync(LevelTutorial);
             return true;
         }
         return false;
     }
-
-    private bool LoadNextLevel(string levelName)
-    {
-        if (!SceneManager.GetActiveScene().name.Equals(levelName) && SceneParameters.level.Equals(levelName))
-        {
-            SceneParameters.level = Level_1;
-            _ = LoadSceneAsync(levelName);
-            return true;
-        }
-        return false;
-    }
-
-
 
     private void ResetSceneParameters()
     {
         SceneParameters.isTutorial = true;
         SceneParameters.level = LevelTutorial;
         SceneParameters.playerScore = 0;
-
     }
 
     private void OnDestroy()
     {
-
         SceneParameters.isTutorial = false;
         SceneParameters.level = null;
         SceneParameters.playerScore = 0;
