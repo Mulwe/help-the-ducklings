@@ -1,28 +1,41 @@
+<div align="center"> 
+ 
 # 🦆 Help The Duckling
 
-A 2D puzzle-platformer where you guide lost ducklings back to safety
-
- <div align="center">
-
-<h3>
-  <a href="https://yourgame.itch.io/" style="text-decoration: none;">
-    🎮 <strong>PLAY NOW - FREE WEBGL BUILD</strong> 🎮
-  </a>
-</h3>
-
-<a href="https://yourgame.itch.io/">
-  <img src="https://img.shields.io/badge/🦆%20AVAILABLE%20ON%20ITCH.IO-FA5C5C?style=for-the-badge&logo=itch.io&logoColor=white&labelColor=000000" alt="Play on Itch.io" height="50">
-</a>
-
-</div> 
-
+**Protect your ducks from enemies trying to steal them!**
  
+### 🎮 [**► PLAY NOW ON ITCH.IO**](https://mulwe.itch.io/help-the-ducklings) 🎮
+
+[![Play on Itch.io](https://img.shields.io/badge/🎯%20CLICK%20TO%20PLAY-FA5C5C?style=for-the-badge&logo=itch.io&logoColor=white&labelColor=000000)](https://mulwe.itch.io/help-the-ducklings)
+
+<br>
+
+![Unity](https://img.shields.io/badge/Unity%206-000000?style=flat-square&logo=unity&logoColor=white)
+![C#](https://img.shields.io/badge/C%23-239120?style=flat-square&logo=c-sharp&logoColor=white)
+![WebGL](https://img.shields.io/badge/WebGL-990000?style=flat-square&logo=webgl&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
+
+</div>
+
 ---
 
 ## 🎮 About The Game
 
-Help The Duckling is a charming 2D puzzle-platformer where players navigate through environmental challenges while managing a growing chain of adorable ducklings. Each level presents unique obstacles that require strategic thinking and precise timing to safely escort all ducklings to their destination.
-The game combines classic platforming mechanics with a dynamic follower system, creating engaging gameplay where every duckling matters.
+Help The Ducklings is an action-packed 2D platformer where you must protect your adorable duck companions from relentless enemies. Push back the threats, survive as long as possible, and keep your flock safe!
+
+Created in ~2 days for the **LowRezz Jam**, this post-jam version includes improvements, polish, and additional features that enhance the core gameplay loop.
+
+**🎮 Controls:**
+- **A / D** – Move left/right  
+- **W / Space** – Jump
+
+**🎯 Objective:**  
+Enemies are trying to steal your ducks! Use your platforming skills to push them away and protect your flock for as long as you can.
+
+<div align="center">
+  <img src="https://img.itch.zone/aW1nLzIyMTM5NTM1LnBuZw==/original/Gnm1NI.png" alt="Help The Ducklings Gameplay" width="700">
+  <p><em>🎮 Play the WebGL version directly in your browser!</em></p>
+</div>
 
 ---
 
@@ -45,6 +58,17 @@ Ducklings that fall out of bounds automatically respawn at their original positi
 
 ### 🎨 Event-Driven Architecture
 Implemented a singleton GameManager with C# events for clean, decoupled communication between systems (UI, score tracking, game state management).
+
+---
+
+## 🏆 Game Jam Project
+
+This game was created for the **[LowRezz Jam](https://itch.io/jam/lowrezjam)** with the following constraints:
+- ⏱️ **Development Time**: ~2 days (jam period)
+- 🎨 **Resolution Constraint**: Low-resolution pixel art style
+- 🚀 **Post-Jam Improvements**: Additional polish, bug fixes, and feature enhancements
+
+The jam version focused on core mechanics, while the current version on Itch.io includes refined gameplay and better visual feedback.
 
 ---
 
@@ -94,19 +118,12 @@ git clone https://github.com/Mulwe/help-the-ducklings
 
 ## 🎯 What I Learned
 
-- **Design Patterns**: Implementing Singleton, FSM, and Object Pooling patterns
-- **Unity Migration**: Handling version upgrades and API deprecations
+- **Rapid Prototyping**: Developing a complete game in 2 days taught me to prioritize core mechanics and iterate quickly
+- **Design Patterns**: Implementing Singleton, FSM, and Object Pooling patterns in a time-constrained environment
+- **Unity Migration**: Handling version upgrades and API deprecations (Unity 202X → Unity 6)
 - **Performance**: Optimizing for WebGL builds and managing memory efficiently
-- **Architecture**: Building scalable, maintainable code with event-driven design
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-  <img src="https://via.placeholder.com/400x250?text=Level+1" alt="Level 1" width="400">
-  <img src="https://via.placeholder.com/400x250?text=Enemy+AI" alt="Enemy AI" width="400">
-</div>
+- **Scope Management**: Making strategic decisions about features to include within jam time limits
+- **Post-Jam Polish**: Improving and refining based on player feedback
 
 ---
 
