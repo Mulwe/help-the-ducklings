@@ -1,22 +1,22 @@
-<div align="center">
-
 # 🦆 Help The Duckling
 
 A 2D puzzle-platformer where you guide lost ducklings back to safety
 
-<div align="center">
-  <img src="https://i.imgur.com/placeholder-gameplay.gif" alt="Gameplay Demo" width="700">
-  <p><em>🎮 Try the WebGL build on Itch.io!</em></p>
-</div>
+ <div align="center">
 
-[![Play on Itch.io](https://img.shields.io/badge/▶%20Play%20Now-FA5C5C?style=for-the-badge&logo=itch.io&logoColor=white)](https://yourgame.itch.io/)
+<h3>
+  <a href="https://yourgame.itch.io/" style="text-decoration: none;">
+    🎮 <strong>PLAY NOW - FREE WEBGL BUILD</strong> 🎮
+  </a>
+</h3>
 
-![Unity](https://img.shields.io/badge/Unity%206-000000?style=flat-square&logo=unity&logoColor=white) 
-![C#](https://img.shields.io/badge/C%23-239120?style=flat-square&logo=c-sharp&logoColor=white)
-![WebGL](https://img.shields.io/badge/WebGL-990000?style=flat-square&logo=webgl&logoColor=white)
+<a href="https://yourgame.itch.io/">
+  <img src="https://img.shields.io/badge/🦆%20AVAILABLE%20ON%20ITCH.IO-FA5C5C?style=for-the-badge&logo=itch.io&logoColor=white&labelColor=000000" alt="Play on Itch.io" height="50">
+</a>
 
-</div>
+</div> 
 
+ 
 ---
 
 ## 🎮 About The Game
